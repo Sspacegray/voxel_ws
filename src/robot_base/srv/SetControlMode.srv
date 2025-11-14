@@ -1,0 +1,6 @@
+# Request
+uint16 mode1
+uint16 mode2
+---
+# Response
+bool success

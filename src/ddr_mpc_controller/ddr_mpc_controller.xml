@@ -1,0 +1,8 @@
+<library path="ddr_mpc_controller">
+  <class
+    name="ddr_navigation::DdrMpcController"
+    type="ddr_navigation::DdrMpcController"
+    base_class_type="nav2_core::Controller">
+    <description>Differential-drive MPC controller with velocity-profile optimization.</description>
+  </class>
+</library>

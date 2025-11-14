@@ -1,0 +1,8 @@
+<library path="ddr_trajectory_optimizer">
+  <class
+    name="ddr_navigation::DdrTrajectoryOptimizer"
+    type="ddr_navigation::DdrTrajectoryOptimizer"
+    base_class_type="nav2_core::Smoother">
+    <description>Path smoother that enforces DDR kinematic bounds with iterative optimization.</description>
+  </class>
+</library>

@@ -1,0 +1,7 @@
+# VSCode 配置和日志
+.vscode/
+log/
+
+# 大体积示例数据（不要推到 GitHub）
+src/robot_localization/point_lio/image/
+src/robot_localization/faster-lio/PCD/

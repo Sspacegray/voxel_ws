@@ -1,0 +1,8 @@
+<library path="ddr_jps_global_planner">
+  <class
+    name="ddr_navigation::DdrJpsGlobalPlanner"
+    type="ddr_navigation::DdrJpsGlobalPlanner"
+    base_class_type="nav2_core::GlobalPlanner">
+    <description>Jump Point Search based global planner for Nav2 using DDR-opt heuristics.</description>
+  </class>
+</library>
