@@ -2,27 +2,28 @@ laserMapping:
     ros__parameters:
         common:
             lid_topic:  "/livox/lidar"
-            imu_topic:  "/livox/imu" #添加了imu滤波
+            imu_topic:  "/livox/imu" 
             time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
             
         preprocess:
             lidar_type: 1                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
             scan_line:  4
-            blind: 0.35
-            time_scale: 1e-3
-
+            blind: 0.35  # livox mid360盲区0.35m
+            time_scale: 1e-3   #
+            timestamp_unit: 3  # 解析 Livox CustomMsg 中的时间戳
         mapping:
-            acc_cov: 0.1
-            gyr_cov: 0.1
+            acc_cov: 0.5 #default 0.1
+            gyr_cov: 0.5  #default 0.1
             b_acc_cov: 0.0001
             b_gyr_cov: 0.0001
             fov_degree:    360
             det_range:     20.0
-            extrinsic_est_en:  true      # true: enable the online estimation of IMU-LiDAR extrinsic
-            extrinsic_T: [ -0.011, -0.02329, 0.04412 ]
+            extrinsic_est_en:  true      # true: enable the online estimation of IMU-LiDAR extrinsic  imu lidar进行在线标定
+            #外参 lidar2imu
+            extrinsic_T: [ -0.011, -0.02329, 0.04412 ]  #平移向量
             extrinsic_R: [ 1.0, 0.0, 0.0,
                       0.0, 1.0, 0.0,
-                      0.0, 0.0, 1.0 ]
+                      0.0, 0.0, 1.0 ]   #旋转矩阵
 
 
         publish:

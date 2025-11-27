@@ -1,0 +1,32 @@
+sdf_map:
+  ros__parameters:
+    # 地图参数
+    use_global_map: false  # 是否使用全局地图文件（PGM格式）
+    global_map_num: 0
+    global_map_path: []
+    
+    # 如果不使用全局地图，则使用动态地图
+    map_size_x: 30.0  # 地图尺寸 (米)
+    map_size_y: 30.0
+    resolusion_: 0.05  # 分辨率 (米/像素)
+    origin_x: -15.0
+    origin_y: -15.0
+    
+    # 障碍物膨胀参数
+    obstacles_inflation: 0.3  # 障碍物膨胀距离 (米)
+    
+    # 局部更新参数
+    local_map_margin: 10  # 局部地图边界 (像素)
+    local_update_range_x: 5.0  # 局部更新范围 (米)
+    local_update_range_y: 5.0
+    
+    # 可视化
+    show_esdf_time: true  # 是否显示ESDF计算时间
+    frame_id: "odom"  # 坐标系
+    
+    # 激光雷达话题（用于动态障碍物检测）
+    laser_topic: "scan"
+
+manager:
+  ros__parameters:
+    odometry: "/odom"  # 里程计话题

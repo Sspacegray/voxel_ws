@@ -1,9 +1,9 @@
 <library path="robotcar_hardware_interface">
-  <class name="robotcar_base/RobotCarHardwareInterface"
+  <class name="robot_base/RobotCarHardwareInterface"
          type="robotcar_base::RobotCarHardwareInterface"
          base_class_type="hardware_interface::SystemInterface">
     <description>
-      ros2_control hardware interface for the RobotCar.
+      ROS2 hardware interface for RobotCar
     </description>
   </class>
-</library> 
+</library>

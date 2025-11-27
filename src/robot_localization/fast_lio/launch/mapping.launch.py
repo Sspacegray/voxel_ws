@@ -61,8 +61,8 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_config_path_cmd)
     ld.add_action(decalre_config_file_cmd)
-    #ld.add_action(declare_rviz_cmd)
-    #ld.add_action(declare_rviz_config_path_cmd)
+    ld.add_action(declare_rviz_cmd)
+    ld.add_action(declare_rviz_config_path_cmd)
 
     ld.add_action(fast_lio_node)
     ld.add_action(rviz_node)

@@ -352,7 +352,17 @@ void imu_cbk(const sensor_msgs::msg::Imu::UniquePtr msg_in)
     publish_count ++;
     // cout<<"IMU got at: "<<msg_in->header.stamp.toSec()<<endl;
     sensor_msgs::msg::Imu::SharedPtr msg(new sensor_msgs::msg::Imu(*msg_in));
-    
+
+    // Scale IMU acceleration if unit is g (approx 1.0)
+    double acc_norm = sqrt(msg->linear_acceleration.x * msg->linear_acceleration.x +
+                           msg->linear_acceleration.y * msg->linear_acceleration.y +
+                           msg->linear_acceleration.z * msg->linear_acceleration.z);
+    if (acc_norm < 2.0 && acc_norm > 0.1)
+    {
+        msg->linear_acceleration.x *= 9.81;
+        msg->linear_acceleration.y *= 9.81;
+        msg->linear_acceleration.z *= 9.81;
+    }
 
     msg->header.stamp = get_ros_time(get_time_sec(msg_in->header.stamp) - time_diff_lidar_to_imu);
     if (abs(timediff_lidar_wrt_imu) > 0.1 && time_sync_en)
@@ -654,6 +664,7 @@ void publish_odometry(const rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPt
     trans.transform.rotation.x = odomAftMapped.pose.pose.orientation.x;
     trans.transform.rotation.y = odomAftMapped.pose.pose.orientation.y;
     trans.transform.rotation.z = odomAftMapped.pose.pose.orientation.z;
+    trans.header.stamp = odomAftMapped.header.stamp;
     tf_br->sendTransform(trans);
 }
 

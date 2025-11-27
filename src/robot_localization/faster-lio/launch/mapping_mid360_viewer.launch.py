@@ -53,8 +53,8 @@ def generate_launch_description():
 
     return LaunchDescription([
         rviz_arg,
-        stdout_linebuf_envvar,
-        stdout_colorized_envvar,
+        stdout_linebuf_envvar,  # 设置行缓冲环境变量 用于实时查看日志
+        stdout_colorized_envvar, # 设置彩色输出环境变量 用于区分日志级别
         faster_lio_node,
         lidar_tf,
         rviz_node,

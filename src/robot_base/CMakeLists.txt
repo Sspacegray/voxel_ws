@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(robotcar_base)
+project(robot_base)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -87,12 +87,9 @@ install(
 
 install(
     PROGRAMS
-        scripts/imu_node.py
-        scripts/laser_calibration_node.py
-        scripts/dynamic_laser_tf_publisher.py
+        scripts/angular_calibration.py
+        scripts/linear_calibration.py
         scripts/sync_laser_params.py
-        scripts/laser_frame_remapper.py
-        # scripts/test_imu_integration.py
     DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -40,7 +40,7 @@ def generate_launch_description():
         
         # 激光雷达过滤器节点 - 仅在use_filter为true时启动
         Node(
-            package='robotcar_base',
+            package='robot_base',
             executable='laser_filter_node_exe',
             name='lidar_filter',
             output='screen',

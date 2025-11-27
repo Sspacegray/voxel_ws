@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <Eigen/Core>
+#include "geometry_msgs/msg/point_stamped.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav2_core/controller.hpp"
@@ -121,5 +122,15 @@ private:
 
   mutable double last_cmd_v_ = 0.0;
   mutable double last_cmd_w_ = 0.0;
+
+  struct CarICR
+  {
+    double xv = 0.0;
+    double yl = 0.0;
+    double yr = 0.0;
+  };
+  CarICR car_icr_;
+  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr icr_sub_;
+  void icrCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
 };
 }  // namespace ddr_navigation

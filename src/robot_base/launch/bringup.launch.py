@@ -20,7 +20,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "imu_port",
-            default_value="/dev/imu_usb",
+            default_value="/imu",
             description="The serial port for the IMU",
         )
     )
@@ -34,7 +34,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "namespace",
-            default_value="",  # {{ AURA-X: Modify - 默认为空命名空间，支持可选命名空间. }}
+            default_value="", 
             description="ROS2 namespace (optional, default: empty for root namespace)",
         )
     )
@@ -45,8 +45,6 @@ def generate_launch_description():
     imu_topic = LaunchConfiguration("imu_topic")
     namespace = LaunchConfiguration("namespace")
 
-    # {{ AURA-X: Modify - 移除参数文件依赖，使用直接参数配置. }}
-    # 创建基础参数字典
     base_params = {
         'use_sim_time': use_sim_time,
     }
@@ -57,7 +55,7 @@ def generate_launch_description():
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
             PathJoinSubstitution(
-                [FindPackageShare("robot_base"), "urdf", "robotcar.xacro"]
+                [FindPackageShare("robot_base"), "urdf", "four_diff.xacro"]
             ),
         ]
     )
@@ -68,13 +66,11 @@ def generate_launch_description():
 
     robot_controllers = PathJoinSubstitution(
         [
-            FindPackageShare("robotcar_base"),
+            FindPackageShare("robot_base"),
             "config",
             "controllers.yaml",
         ]
     )
-
-    # {{ AURA-X: Modify - 支持可选命名空间，空命名空间时无需PushRosNamespace和TF重映射. }}
     # 构建节点列表
     nodes_list = [
         Node(
@@ -97,21 +93,6 @@ def generate_launch_description():
                 ],
             ),
 
-            # IMU现在通过ros2_control硬件接口集成，不再需要独立节点
-            # Node(
-            #     package='robotcar_base',
-            #     executable='imu_node.py',
-            #     name='imu_node',
-            #     output='screen',
-            #     parameters=[
-            #         base_params,
-            #         {
-            #             'port': imu_port,
-            #             'imu_topic': imu_topic,
-            #         }
-            #     ]
-            # ),
-
             Node(
                 package="controller_manager",
                 executable="spawner",
@@ -126,12 +107,54 @@ def generate_launch_description():
                 name="robot_controller_spawner",  # 添加名称
             ),
 
+            # Node(
+            #     package="controller_manager",
+            #     executable="spawner",
+            #     # arguments=["imu_sensor_broadcaster", "--controller-manager", "controller_manager"],
+            #     # name="imu_sensor_broadcaster_spawner",
+            # ),
+
+            # 独立的 IMU 驱动节点 - 使用外置 HipNuc IMU
             Node(
-                package="controller_manager",
-                executable="spawner",
-                arguments=["imu_sensor_broadcaster", "--controller-manager", "controller_manager"],
-                name="imu_sensor_broadcaster_spawner",
+                package='hipnuc_imu',
+                executable='talker',
+                name='IMU_publisher',
+                output='screen',
+                parameters=[
+                    PathJoinSubstitution([
+                        FindPackageShare("hipnuc_imu"),
+                        "config",
+                        "hipnuc_config.yaml"
+                    ])
+                ],
             ),
+
+            # Livox MID360 驱动 (含 IMU) - 已注释，改用外置 IMU
+            # Node(
+            #     package='livox_ros_driver2',
+            #     executable='livox_ros_driver2_node',
+            #     name='livox_lidar_publisher',
+            #     output='screen',
+            #     parameters=[
+            #         {'xfer_format': 4},    # 0-Pointcloud2(PointXYZRTL), 1-customized pointcloud format
+            #         {'multi_topic': 0},    # 0-All LiDARs share the same topic
+            #         {'data_src': 0},       # 0-lidar
+            #         {'publish_freq': 10.0},
+            #         {'output_data_type': 0},
+            #         {'frame_id': 'livox_frame'},
+            #         {'lvx_file_path': '/home/livox/livox_test.lvx'},
+            #         {'user_config_path': PathJoinSubstitution([
+            #             FindPackageShare("livox_ros_driver2"),
+            #             "config",
+            #             "MID360_config.json"
+            #         ])},
+            #         {'cmdline_input_bd_code': 'livox0000000001'}
+            #     ],
+            #     remappings=[
+            #         ('/livox/imu', imu_topic),
+            #         ('/livox/lidar', '/scan_points')
+            #     ]
+            # ),
     ]
 
     # 根据命名空间是否为空来决定是否使用PushRosNamespace和TF重映射

@@ -363,7 +363,7 @@
   <!-- ======================== ros2_control 配置 ======================== -->
   <ros2_control name="RobotCar" type="system">
     <hardware>
-      <plugin>robotcar_base/RobotCarHardwareInterface</plugin>
+      <plugin>robot_base/RobotCarHardwareInterface</plugin>
       <param name="serial_port_name">/dev/STM32</param>
       <param name="serial_baud_rate">115200</param>
       <param name="wheel_radius">0.0875</param>

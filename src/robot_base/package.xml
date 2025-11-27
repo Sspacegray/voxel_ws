@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>robotcar_base</name>
+  <name>robot_base</name>
   <version>0.0.0</version>
   <description>RobotCar base package including hardware interface, URDF, and messages for ROS2</description>
   <maintainer email="user@todo.todo">user</maintainer>

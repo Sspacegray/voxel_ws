@@ -100,10 +100,16 @@ hardware_interface::CallbackReturn RobotCarHardwareInterface::on_init(
     wheel_radius_ = std::stod(info_.hardware_parameters["wheel_radius"]);
     wheel_separation_ = std::stod(info_.hardware_parameters["wheel_separation"]);
 
-    // Get IMU parameters
-    imu_port_name_ = info_.hardware_parameters.at("imu_port");
-    imu_baud_rate_ = std::stoi(info_.hardware_parameters.at("imu_baud_rate"));
-    imu_frame_id_ = info_.hardware_parameters.at("imu_frame_id");
+    // Get IMU parameters (Optional)
+    if (info_.hardware_parameters.count("imu_port")) {
+        imu_port_name_ = info_.hardware_parameters.at("imu_port");
+        imu_baud_rate_ = std::stoi(info_.hardware_parameters.at("imu_baud_rate"));
+        imu_frame_id_ = info_.hardware_parameters.at("imu_frame_id");
+        use_imu_ = true;
+    } else {
+        use_imu_ = false;
+        RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "IMU parameters not found, disabling internal IMU.");
+    }
 
     // Initialize states and commands
     hw_position_left_ = 0.0;
@@ -124,13 +130,13 @@ hardware_interface::CallbackReturn RobotCarHardwareInterface::on_init(
 
     // Create a node for non-real-time communication
     non_realtime_node_ = rclcpp::Node::make_shared(info_.name + "_non_realtime_node");
-    car_info_pub_ = non_realtime_node_->create_publisher<robotcar_base::msg::CarInfo>("/car_info", rclcpp::SystemDefaultsQoS());
+    car_info_pub_ = non_realtime_node_->create_publisher<robot_base::msg::CarInfo>("/car_info", rclcpp::SystemDefaultsQoS());
     mag_pub_ = non_realtime_node_->create_publisher<sensor_msgs::msg::MagneticField>("/wit/mag", rclcpp::SystemDefaultsQoS());
 
     // Create the service server for setting control modes
     auto service_callback =
-      [this](const std::shared_ptr<robotcar_base::srv::SetControlMode::Request> request,
-             std::shared_ptr<robotcar_base::srv::SetControlMode::Response>      response)
+      [this](const std::shared_ptr<robot_base::srv::SetControlMode::Request> request,
+             std::shared_ptr<robot_base::srv::SetControlMode::Response>      response)
       {
         RCLCPP_INFO(
           rclcpp::get_logger("RobotCarHardwareInterface"),
@@ -139,7 +145,7 @@ hardware_interface::CallbackReturn RobotCarHardwareInterface::on_init(
         this->hw_mode2_.store(request->mode2);
         response->success = true;
       };
-    mode_service_ = non_realtime_node_->create_service<robotcar_base::srv::SetControlMode>("set_control_mode", service_callback);
+    mode_service_ = non_realtime_node_->create_service<robot_base::srv::SetControlMode>("set_control_mode", service_callback);
 
     node_thread_ = std::thread([this]() { rclcpp::spin(this->non_realtime_node_); });
 
@@ -147,28 +153,76 @@ hardware_interface::CallbackReturn RobotCarHardwareInterface::on_init(
     return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+RobotCarHardwareInterface::~RobotCarHardwareInterface()
+{
+    // Stop IMU thread
+    if (imu_thread_running_.load())
+    {
+        imu_thread_running_.store(false);
+        if (imu_thread_.joinable())
+        {
+            imu_thread_.join();
+        }
+    }
+
+    // Close serial ports
+    if (serial_port_.IsOpen())
+    {
+        serial_port_.Close();
+    }
+    if (use_imu_ && imu_serial_port_.IsOpen())
+    {
+        imu_serial_port_.Close();
+    }
+    if (node_thread_.joinable())
+    {
+        // We cannot easily stop rclcpp::spin, but we can join the thread if the node is destroyed
+        // Ideally, we should cancel the spin, but rclcpp::spin blocks.
+        // However, since we are destroying the object, the node might be destroyed too.
+        // Let's just join it.
+        // Note: rclcpp::shutdown() might be needed if spin is blocking.
+        // But calling shutdown here might affect other nodes.
+        // For now, let's assume the node is stopped elsewhere or we detach if we can't stop it.
+        // Actually, detaching is safer to avoid terminate if we can't stop it.
+        // But let's try to join.
+        // If the node is spinning, it won't return.
+        // So we should probably detach node_thread_ if we can't signal it to stop.
+        // But wait, on_deactivate joins it? No, on_deactivate joins it.
+        // If on_deactivate wasn't called, we are here.
+        // If we join a spinning thread, we hang.
+        // So we should DETACH node_thread_ if it's still running.
+        node_thread_.detach(); 
+    }
+}
+
 std::vector<hardware_interface::StateInterface> RobotCarHardwareInterface::export_state_interfaces()
 {
   std::vector<hardware_interface::StateInterface> state_interfaces;
 
-  // Wheel state interfaces
-  state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "position", &hw_position_left_));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[0].name, "velocity", &hw_velocity_left_));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[1].name, "position", &hw_position_right_));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[1].name, "velocity", &hw_velocity_right_));
+  for (const auto & joint : info_.joints) {
+    if (joint.name.find("left") != std::string::npos) {
+      state_interfaces.emplace_back(hardware_interface::StateInterface(joint.name, "position", &hw_position_left_));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(joint.name, "velocity", &hw_velocity_left_));
+    } else if (joint.name.find("right") != std::string::npos) {
+      state_interfaces.emplace_back(hardware_interface::StateInterface(joint.name, "position", &hw_position_right_));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(joint.name, "velocity", &hw_velocity_right_));
+    }
+  }
 
   // IMU state interfaces
-  const std::string& sensor_name = info_.sensors[0].name;
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "orientation.x", &imu_orientation_[0]));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "orientation.y", &imu_orientation_[1]));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "orientation.z", &imu_orientation_[2]));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "orientation.w", &imu_orientation_[3]));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "angular_velocity.x", &imu_angular_velocity_[0]));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "angular_velocity.y", &imu_angular_velocity_[1]));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "angular_velocity.z", &imu_angular_velocity_[2]));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "linear_acceleration.x", &imu_linear_acceleration_[0]));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "linear_acceleration.y", &imu_linear_acceleration_[1]));
-  state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "linear_acceleration.z", &imu_linear_acceleration_[2]));
+  if (use_imu_) {
+      const std::string& sensor_name = info_.sensors[0].name;
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "orientation.x", &imu_orientation_[0]));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "orientation.y", &imu_orientation_[1]));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "orientation.z", &imu_orientation_[2]));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "orientation.w", &imu_orientation_[3]));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "angular_velocity.x", &imu_angular_velocity_[0]));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "angular_velocity.y", &imu_angular_velocity_[1]));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "angular_velocity.z", &imu_angular_velocity_[2]));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "linear_acceleration.x", &imu_linear_acceleration_[0]));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "linear_acceleration.y", &imu_linear_acceleration_[1]));
+      state_interfaces.emplace_back(hardware_interface::StateInterface(sensor_name, "linear_acceleration.z", &imu_linear_acceleration_[2]));
+  }
 
   return state_interfaces;
 }
@@ -176,8 +230,13 @@ std::vector<hardware_interface::StateInterface> RobotCarHardwareInterface::expor
 std::vector<hardware_interface::CommandInterface> RobotCarHardwareInterface::export_command_interfaces()
 {
   std::vector<hardware_interface::CommandInterface> command_interfaces;
-  command_interfaces.emplace_back(hardware_interface::CommandInterface(info_.joints[0].name, "velocity", &hw_command_velocity_left_));
-  command_interfaces.emplace_back(hardware_interface::CommandInterface(info_.joints[1].name, "velocity", &hw_command_velocity_right_));
+  for (const auto & joint : info_.joints) {
+    if (joint.name.find("left") != std::string::npos) {
+      command_interfaces.emplace_back(hardware_interface::CommandInterface(joint.name, "velocity", &hw_command_velocity_left_));
+    } else if (joint.name.find("right") != std::string::npos) {
+      command_interfaces.emplace_back(hardware_interface::CommandInterface(joint.name, "velocity", &hw_command_velocity_right_));
+    }
+  }
   return command_interfaces;
 }
 
@@ -216,43 +275,45 @@ hardware_interface::CallbackReturn RobotCarHardwareInterface::on_activate(
     }
 
     // Initialize IMU serial port
-    try
-    {
-        RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "Attempting to open IMU serial port: %s at %d baud", imu_port_name_.c_str(), imu_baud_rate_);
-        imu_serial_port_.Open(imu_port_name_);
-        
-        LibSerial::BaudRate imu_baud;
-        // switch (imu_baud_rate_) {
-        //     case 9600:   imu_baud = LibSerial::BaudRate::BAUD_9600; break;
-        //     case 115200: imu_baud = LibSerial::BaudRate::BAUD_115200; break;
-        //     default:
-        //         RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"),
-        //                    "Unsupported IMU baud rate: %d. Using 115200 as default.", imu_baud_rate_);
-        //         imu_baud = LibSerial::BaudRate::BAUD_115200;
-        //         break;
-        // }
-        imu_baud = LibSerial::BaudRate::BAUD_115200;
-        imu_serial_port_.SetBaudRate(imu_baud);
-        imu_serial_port_.SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
-        imu_serial_port_.SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
-        imu_serial_port_.SetParity(LibSerial::Parity::PARITY_NONE);
-        imu_serial_port_.SetStopBits(LibSerial::StopBits::STOP_BITS_1);
-        imu_serial_port_.FlushIOBuffers();
+    if (use_imu_) {
+        try
+        {
+            RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "Attempting to open IMU serial port: %s at %d baud", imu_port_name_.c_str(), imu_baud_rate_);
+            imu_serial_port_.Open(imu_port_name_);
+            
+            LibSerial::BaudRate imu_baud;
+            // switch (imu_baud_rate_) {
+            //     case 9600:   imu_baud = LibSerial::BaudRate::BAUD_9600; break;
+            //     case 115200: imu_baud = LibSerial::BaudRate::BAUD_115200; break;
+            //     default:
+            //         RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"),
+            //                    "Unsupported IMU baud rate: %d. Using 115200 as default.", imu_baud_rate_);
+            //         imu_baud = LibSerial::BaudRate::BAUD_115200;
+            //         break;
+            // }
+            imu_baud = LibSerial::BaudRate::BAUD_115200;
+            imu_serial_port_.SetBaudRate(imu_baud);
+            imu_serial_port_.SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
+            imu_serial_port_.SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
+            imu_serial_port_.SetParity(LibSerial::Parity::PARITY_NONE);
+            imu_serial_port_.SetStopBits(LibSerial::StopBits::STOP_BITS_1);
+            imu_serial_port_.FlushIOBuffers();
 
-        // Start IMU reading thread
-        imu_thread_running_.store(true);
-        imu_thread_ = std::thread(&RobotCarHardwareInterface::imuReadThread, this);
-        RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "✅ IMU serial port opened and thread started: %s", imu_port_name_.c_str());
-    }
-    catch (const LibSerial::OpenFailed& e)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("RobotCarHardwareInterface"), "❌ Failed to open IMU serial port %s: %s", imu_port_name_.c_str(), e.what());
-        RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"), "IMU will not be available, but system will continue without it");
-    }
-    catch (const std::exception& e)
-    {
-        RCLCPP_ERROR(rclcpp::get_logger("RobotCarHardwareInterface"), "❌ IMU initialization error: %s", e.what());
-        RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"), "IMU will not be available, but system will continue without it");
+            // Start IMU reading thread
+            imu_thread_running_.store(true);
+            imu_thread_ = std::thread(&RobotCarHardwareInterface::imuReadThread, this);
+            RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "✅ IMU serial port opened and thread started: %s", imu_port_name_.c_str());
+        }
+        catch (const LibSerial::OpenFailed& e)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("RobotCarHardwareInterface"), "❌ Failed to open IMU serial port %s: %s", imu_port_name_.c_str(), e.what());
+            RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"), "IMU will not be available, but system will continue without it");
+        }
+        catch (const std::exception& e)
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("RobotCarHardwareInterface"), "❌ IMU initialization error: %s", e.what());
+            RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"), "IMU will not be available, but system will continue without it");
+        }
     }
 
     RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "Successfully activated!");
@@ -279,7 +340,7 @@ hardware_interface::CallbackReturn RobotCarHardwareInterface::on_deactivate(
     {
         serial_port_.Close();
     }
-    if (imu_serial_port_.IsOpen())
+    if (use_imu_ && imu_serial_port_.IsOpen())
     {
         imu_serial_port_.Close();
     }
@@ -294,44 +355,100 @@ hardware_interface::CallbackReturn RobotCarHardwareInterface::on_deactivate(
 hardware_interface::return_type RobotCarHardwareInterface::read(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
+    static int read_counter = 0;
+    read_counter++;
+
+    // 1. Read all available data into the buffer
     if (serial_port_.IsDataAvailable())
     {
-        std::vector<uint8_t> read_buffer;
         try
         {
-            serial_port_.Read(read_buffer, sizeof(REPORT_DATA), 100); // 100 ms timeout
-            if (read_buffer.size() == sizeof(REPORT_DATA))
-            {
-                REPORT_DATA report_data;
-                memcpy(&report_data, read_buffer.data(), sizeof(REPORT_DATA));
-                
-                if (report_data.Head_1 == 0xa0 && report_data.Head_2 == 0x0a && report_data.cmd_1 == 0x55)
-                {
-                    double robot_vx = static_cast<double>(report_data.Speed_X) / 1000.0;  // m/s
-                    double robot_vth = static_cast<double>(report_data.Speed_Z) / 1000.0; // rad/s
-                    uint8_t hand_cap = static_cast<uint8_t>(report_data.flag_1);
-
-                    hw_velocity_left_ = (robot_vx - robot_vth * wheel_separation_ / 2.0) / wheel_radius_;
-                    hw_velocity_right_ = (robot_vx + robot_vth * wheel_separation_ / 2.0) / wheel_radius_;
-
-                    hw_position_left_ += hw_velocity_left_ * period.seconds();
-                    hw_position_right_ += hw_velocity_right_ * period.seconds();
-
-                    auto msg = std::make_unique<robotcar_base::msg::CarInfo>();
-                    msg->speed_x = robot_vx;
-                    msg->speed_z = robot_vth;
-                    msg->power = report_data.power;
-                    msg->hand_capture = hand_cap;
-                    car_info_pub_->publish(std::move(msg));
-                }
-            }
+            std::vector<uint8_t> new_data;
+            serial_port_.Read(new_data, 0, 0); // Read whatever is available
+            serial_buffer_.insert(serial_buffer_.end(), new_data.begin(), new_data.end());
+            
+            // Debug: Print received data size
+            // if (read_counter % 20 == 0) {
+            //     RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), 
+            //         "Received %zu bytes. Buffer size: %zu", new_data.size(), serial_buffer_.size());
+            // }
         }
-        catch (const LibSerial::ReadTimeout&)
+        catch (const LibSerial::ReadTimeout&) { /* Ignore */ }
+        catch (const std::exception& e)
         {
-             // This is expected if no data is available from the motor controller
+            RCLCPP_ERROR(rclcpp::get_logger("RobotCarHardwareInterface"), 
+                "Exception during serial read: %s", e.what());
         }
     }
-    
+
+    // Debug: Print buffer content if it's growing too large (stuck)
+    if (serial_buffer_.size() > 100 && read_counter % 50 == 0) {
+        std::stringstream ss;
+        ss << "Buffer stuck? First 10 bytes: ";
+        for (size_t i = 0; i < std::min<size_t>(10, serial_buffer_.size()); ++i) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(serial_buffer_[i]) << " ";
+        }
+        RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"), "%s", ss.str().c_str());
+    }
+
+    // 2. Process buffer: Look for header [0xA0, 0x0A, 0x55]
+    // We need at least sizeof(REPORT_DATA) bytes to process a packet
+    while (serial_buffer_.size() >= sizeof(REPORT_DATA))
+    {
+        // Check for header
+        if (serial_buffer_[0] == 0xA0 && 
+            serial_buffer_[1] == 0x0A && 
+            serial_buffer_[2] == 0x55)
+        {
+            // Header found, copy packet
+            REPORT_DATA report_data;
+            memcpy(&report_data, serial_buffer_.data(), sizeof(REPORT_DATA));
+
+            // Verify checksum
+            uint8_t checksum = CalcChecksum(serial_buffer_.data(), sizeof(REPORT_DATA));
+            if (checksum == report_data.Sum)
+            {
+                // Valid packet, process it
+                double robot_vx = static_cast<double>(report_data.Speed_X) / 1000.0;
+                double robot_vth = static_cast<double>(report_data.Speed_Z) / 1000.0;
+                uint8_t hand_cap = static_cast<uint8_t>(report_data.flag_1);
+
+                hw_velocity_left_ = (robot_vx - robot_vth * wheel_separation_ / 2.0) / wheel_radius_;
+                hw_velocity_right_ = (robot_vx + robot_vth * wheel_separation_ / 2.0) / wheel_radius_;
+
+                hw_position_left_ += hw_velocity_left_ * period.seconds();
+                hw_position_right_ += hw_velocity_right_ * period.seconds();
+
+                auto msg = std::make_unique<robot_base::msg::CarInfo>();
+                msg->speed_x = robot_vx;
+                msg->speed_z = robot_vth;
+                msg->power = report_data.power;
+                msg->hand_capture = hand_cap;
+                car_info_pub_->publish(std::move(msg));
+                
+                // Debug: Log successful publish
+                // if (read_counter % 50 == 0) {
+                //    RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "Published CarInfo: vx=%.2f", robot_vx);
+                // }
+
+                // Remove processed packet from buffer
+                serial_buffer_.erase(serial_buffer_.begin(), serial_buffer_.begin() + sizeof(REPORT_DATA));
+            }
+            else
+            {
+                // Checksum failed, remove header and continue search
+                RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"), 
+                    "Checksum mismatch! Expected: %02x, Calc: %02x", report_data.Sum, checksum);
+                serial_buffer_.erase(serial_buffer_.begin()); 
+            }
+        }
+        else
+        {
+            // Header not found, remove first byte and continue search
+            serial_buffer_.erase(serial_buffer_.begin());
+        }
+    }
+
     return hardware_interface::return_type::OK;
 }
 
@@ -341,6 +458,15 @@ hardware_interface::return_type RobotCarHardwareInterface::write(
     double vx = (hw_command_velocity_right_ + hw_command_velocity_left_) * wheel_radius_ / 2.0;
     double vth = (hw_command_velocity_right_ - hw_command_velocity_left_) * wheel_radius_ / wheel_separation_;
     
+    // Debug log for write (throttled)
+    static int write_counter = 0;
+    write_counter++;
+    // if (write_counter % 20 == 0) {
+    //     RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), 
+    //         "write() called. cmd_vel_L=%.3f, cmd_vel_R=%.3f -> vx=%.3f, vth=%.3f", 
+    //         hw_command_velocity_left_, hw_command_velocity_right_, vx, vth);
+    // }
+
     CMD_DATA cmd_data;
     cmd_data.Head_1 = 0xA0;
     cmd_data.Head_2 = 0x0A;
@@ -356,7 +482,21 @@ hardware_interface::return_type RobotCarHardwareInterface::write(
     std::vector<uint8_t> write_buffer(sizeof(CMD_DATA));
     memcpy(write_buffer.data(), &cmd_data, sizeof(CMD_DATA));
 
-    serial_port_.Write(write_buffer);
+    try {
+        serial_port_.Write(write_buffer);
+        
+        // if (write_counter % 20 == 0) {
+        //      std::stringstream ss;
+        //      ss << "Write bytes: ";
+        //      for (size_t i = 0; i < write_buffer.size(); ++i) {
+        //          ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(write_buffer[i]) << " ";
+        //      }
+        //      RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "%s", ss.str().c_str());
+        // }
+    } catch (const std::exception& e) {
+        RCLCPP_ERROR(rclcpp::get_logger("RobotCarHardwareInterface"), 
+            "Exception during serial write: %s", e.what());
+    }
 
     return hardware_interface::return_type::OK;
 }

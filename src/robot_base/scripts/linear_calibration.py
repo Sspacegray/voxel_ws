@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright 2016 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,9 +75,8 @@ class MinimalPublisher(Node):
         self.get_logger().info("Bring up rqt_reconfigure to control the test.")
 
         # ros2_control 的 diff_drive_controller 在 use_stamped_vel=false 时订阅的是
-        # /cmd_vel_unstamped (geometry_msgs/msg/Twist)。直线标定脚本需要直接驱动底盘，
-        # 因此这里改为发布到 /cmd_vel_unstamped，保持消息类型为 Twist 即可。
-        self.cmd_vel = self.create_publisher(Twist, '/cmd_vel_unstamped',  1)
+        # /diff_drive_controller/cmd_vel_unstamped (geometry_msgs/msg/Twist)。
+        self.cmd_vel = self.create_publisher(Twist, '/diff_drive_controller/cmd_vel_unstamped',  1)
       
         self.timer = self.create_timer(self.periodtime, self.timer_callback) # 单位是秒
 
@@ -111,14 +111,14 @@ class MinimalPublisher(Node):
                 from_frame_rel,
                 now)
             self.get_logger().info('第一次找到tf')
-            self.x = trans.transform.translation.x
-            self.y = trans.transform.translation.y
-            self.yaw = tf_transformations.euler_from_quaternion([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])[2]
-            self.get_logger().info('self.x："%f"' % self.x)
-            self.get_logger().info('self.y："%f"' % self.y)
-            self.get_logger().info('self.yaw："%f"' % self.yaw)
-            self.target_x = self.x + math.cos(self.yaw) * self.test_dx - math.sin(self.yaw) * self.test_dy
-            self.target_y = self.y + math.sin(self.yaw) * self.test_dx + math.cos(self.yaw) * self.test_dy
+            self.start_x = trans.transform.translation.x
+            self.start_y = trans.transform.translation.y
+            self.start_yaw = tf_transformations.euler_from_quaternion([trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w])[2]
+            self.get_logger().info('self.start_x："%f"' % self.start_x)
+            self.get_logger().info('self.start_y："%f"' % self.start_y)
+            self.get_logger().info('self.start_yaw："%f"' % self.start_yaw)
+            # self.target_x = self.x + math.cos(self.yaw) * self.test_dx - math.sin(self.yaw) * self.test_dy
+            # self.target_y = self.y + math.sin(self.yaw) * self.test_dx + math.cos(self.yaw) * self.test_dy
 
         else :
             print("move_loop, 20Hz")
@@ -139,23 +139,34 @@ class MinimalPublisher(Node):
             self.get_logger().info('self.y："%f"' % self.y)
             self.get_logger().info('self.yaw："%f"' % self.yaw)
             
-            distance = math.sqrt(pow((self.x - self.target_x), 2) +
-                                pow((self.y - self.target_y), 2))
-            print("distance: ", distance)
+            # Calculate distance traveled from start (initial x,y)
+            # We need to store initial pose. The script already does this in 'initial' block.
+            # But the 'initial' block sets self.x and self.y as current.
+            # We need separate variables for start_x, start_y.
             
-            if not self.start_test or abs(distance) < self.tolerance:
-                self.start_test = False
-                self.get_logger().info('start_test："%d"' % self.start_test)
+            # Note: In the 'initial' block (lines 103-121), self.x and self.y are set. 
+            # We should treat those as start positions. 
+            # But this callback updates self.x/y every time. 
+            # So we need to modify the class to store self.start_x, self.start_y.
+            
+            # Let's look at the structure. 
+            # I will assume I can rewrite the callback to be cleaner.
+            pass
+            
+            # Re-implementing the logic cleanly:
+            current_distance = math.sqrt(pow((self.x - self.start_x), 2) + pow((self.y - self.start_y), 2))
+            self.get_logger().info(f'Distance Traveled: {current_distance:.4f} / {self.test_dx:.4f}')
+            
+            if current_distance >= self.test_dx:
+                self.get_logger().info('Target distance reached! Stopping robot.')
+                move_cmd = Twist()
+                self.cmd_vel.publish(move_cmd)
+                sys.exit(0)
             else:
-                # If not, move in the appropriate direction
-                # move_cmd.linear.x = copysign(self.speed, -1 * error)
-                self.speed_theta = math.atan2((self.target_y - self.y),(self.target_x - self.x)) - self.yaw
-                self.speed_theta += move_cmd.angular.z * self.periodtime / 2 # 我改成乘号
-                move_cmd.linear.x = self.speed * math.cos(self.speed_theta)
-                move_cmd.linear.y = self.speed * math.sin(self.speed_theta)
-
-            # move_cmd.linear.x = 2.0
-
+                # Move forward
+                move_cmd.linear.x = self.speed
+                move_cmd.angular.z = 0.0
+            
             self.cmd_vel.publish(move_cmd)
 
     def get_pose(self):

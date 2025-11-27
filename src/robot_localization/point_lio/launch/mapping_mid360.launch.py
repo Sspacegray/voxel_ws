@@ -19,11 +19,11 @@ def generate_launch_description():
             'config', 'mid360.yaml'
         ]),
         {
-            'use_imu_as_input': False,  # Change to True to use IMU as input of Point-LIO
+            'use_imu_as_input': True,  # Change to True to use IMU as input of Point-LIO
             'prop_at_freq_of_imu': True,
             'check_satu': True,
             'init_map_size': 10,
-            'point_filter_num': 3,  # Options: 1, 3
+            'point_filter_num': 1,  # Options: 1, 3  采样率
             'space_down_sample': True,
             'filter_size_surf': 0.5,  # Options: 0.5, 0.3, 0.2, 0.15, 0.1
             'filter_size_map': 0.5,  # Options: 0.5, 0.3, 0.15, 0.1
@@ -59,10 +59,10 @@ def generate_launch_description():
     ld = LaunchDescription([
         rviz_arg,
         laser_mapping_node,
-        #GroupAction(
-        #    actions=[rviz_node],
-        #    condition=IfCondition(LaunchConfiguration('rviz'))
-        ),
+        GroupAction(
+           actions=[rviz_node],
+           condition=IfCondition(LaunchConfiguration('rviz'))
+           ),
     ])
 
     return ld

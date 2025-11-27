@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
 import math
@@ -29,9 +30,8 @@ class angleCheckNodeV2(Node):
         self.get_logger().info("Bring up rqt_reconfigure to control the test.")
 
         # Publisher to control the robot's speed
-        # 注意：ros2_control 的 diff_drive_controller 在 use_stamped_vel=false 时订阅 /cmd_vel_unstamped (Twist)
-        # 为了让标定脚本直接驱动底盘，这里改为发布到 /cmd_vel_unstamped
-        self.cmd_vel = self.create_publisher(Twist, '/cmd_vel_unstamped', 1)
+        # 注意：ros2_control 的 diff_drive_controller 在 use_stamped_vel=false 时订阅 /diff_drive_controller/cmd_vel_unstamped (Twist)
+        self.cmd_vel = self.create_publisher(Twist, '/diff_drive_controller/cmd_vel_unstamped', 1)
         self.timer = self.create_timer(0.05, self.timer_callback) # 单位是秒
         self.imu_data = 0
         self.cntFre = 0
@@ -66,11 +66,10 @@ class angleCheckNodeV2(Node):
         if abs(self.d_yaw) < self.r_tolerance or not self.start_test:
             move_cmd = Twist()
             self.cmd_vel.publish(move_cmd)
-            self.get_logger().info('停止')
-            self.get_logger().info('self.yaw："%f"' % self.yaw)
-            self.get_logger().info('self.imu_data"%f"' % self.imu_data)
-            self.target_yaw = 0
-            return
+            self.get_logger().info('Target reached! Stopping robot.')
+            self.get_logger().info('Final yaw: "%f"' % self.yaw)
+            self.get_logger().info('Final imu_data: "%f"' % self.imu_data)
+            sys.exit(0)
         else:
             move_cmd = Twist()
             if self.d_yaw < 0:

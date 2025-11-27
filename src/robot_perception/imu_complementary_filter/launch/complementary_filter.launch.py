@@ -16,6 +16,7 @@ def generate_launch_description():
                     {'use_mag': False},
                     {'gain_acc': 0.01},
                     {'gain_mag': 0.01},
+                    {'publish_tf': False},  # 禁用TF发布，避免与Fast-LIO冲突
                 ],
                 remappings=[
                 	('/imu/data_raw', '/livox/imu'),

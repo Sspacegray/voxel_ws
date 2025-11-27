@@ -16,8 +16,8 @@
 #include "rclcpp/macros.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "robotcar_base/visibility_control.h"
-#include "robotcar_base/msg/car_info.hpp"
-#include "robotcar_base/srv/set_control_mode.hpp"
+#include "robot_base/msg/car_info.hpp"
+#include "robot_base/srv/set_control_mode.hpp"
 #include "sensor_msgs/msg/magnetic_field.hpp"
 
 namespace robotcar_base
@@ -30,6 +30,9 @@ public:
 
     ROBOTCAR_BASE_PUBLIC
     hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo & info) override;
+
+    ROBOTCAR_BASE_PUBLIC
+    ~RobotCarHardwareInterface();
 
     ROBOTCAR_BASE_PUBLIC
     std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
@@ -52,11 +55,12 @@ public:
 private:
     // Communication with hardware
     LibSerial::SerialPort serial_port_;
+    std::vector<uint8_t> serial_buffer_;
 
     // Node for publishing and services
     rclcpp::Node::SharedPtr non_realtime_node_;
-    rclcpp::Publisher<robotcar_base::msg::CarInfo>::SharedPtr car_info_pub_;
-    rclcpp::Service<robotcar_base::srv::SetControlMode>::SharedPtr mode_service_;
+    rclcpp::Publisher<robot_base::msg::CarInfo>::SharedPtr car_info_pub_;
+    rclcpp::Service<robot_base::srv::SetControlMode>::SharedPtr mode_service_;
     
     // --- New Members for Magnetometer ---
     rclcpp::Publisher<sensor_msgs::msg::MagneticField>::SharedPtr mag_pub_;
@@ -102,6 +106,7 @@ private:
     std::thread imu_thread_;
     std::atomic<bool> imu_thread_running_{false};
     std::mutex imu_data_mutex_;
+    bool use_imu_{false};
 
     // IMU data parsing methods
     void imuReadThread();

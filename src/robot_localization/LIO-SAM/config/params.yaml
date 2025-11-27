@@ -2,8 +2,8 @@
   ros__parameters:
 
     # Topics
-    pointCloudTopic: "/livox/lidar"                   # Point cloud data
-    imuTopic: "/imu/data"                        # IMU data
+    pointCloudTopic: "/livox/lidar/pointcloud"                   # Point cloud data
+    imuTopic: "/livox/imu"                        # IMU data
     odomTopic: "odometry/imu"                    # IMU pre-preintegration odometry, same frequency as IMU
     gpsTopic: "odometry/gpsz"                    # GPS odometry topic from navsat, see module_navsat.launch file
 
@@ -20,7 +20,7 @@
 
     # Export settings
     savePCD: false                               # https://github.com/TixiaoShan/LIO-SAM/issues/3
-    savePCDDirectory: "/Downloads/LOAM/"         # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
+    savePCDDirectory: ".liosam"         # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
 
     # Sensor Settings
     sensor: livox                               # lidar sensor type, either 'velodyne', 'ouster' or 'livox'
@@ -29,7 +29,7 @@
     downsampleRate: 1                            # default: 1. Downsample your data if too many
     # points. i.e., 16 = 64 / 4, 16 = 16 / 1
     lidarMinRange: 0.4                           # default: 1.0, minimum lidar range to be used
-    lidarMaxRange: 10.0                        # default: 1000.0, maximum lidar range to be used
+    lidarMaxRange: 20.0                        # default: 1000.0, maximum lidar range to be used
 
     # IMU Settings
     imuAccNoise: 0.01
@@ -37,24 +37,24 @@
     imuAccBiasN: 0.001
     imuGyrBiasN: 0.0001
 
-    imuGravity: -9.8
+    imuGravity: -1.0
     imuRPYWeight: 0.01
 
-    extrinsicTrans:  [-0.05512, -0.02226, 0.0297]
+    extrinsicTrans:  [-0.011, -0.02329, 0.04412]
 
-    extrinsicRot: [ 1.0,  0.0,  0.0,
-                    0.0,  1.0,  0.0,
-                    0.0,  0.0,  1.0 ]
+    extrinsicRot: [ 1.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0,
+                    0.0, 0.0, 1.0 ]
 
-    extrinsicRPY: [ 1.0,  0.0,  0.0,
-                    0.0,  1.0,  0.0,
-                    0.0,  0.0,  1.0 ]
+    extrinsicRPY: [ 1.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0,
+                    0.0, 0.0, 1.0 ]
 
     # LOAM feature threshold
-    edgeThreshold: 0.1
-    surfThreshold: 0.1
+    edgeThreshold: 0.01
+    surfThreshold: 0.01
     edgeFeatureMinValidNum: 4
-    surfFeatureMinValidNum: 100
+    surfFeatureMinValidNum: 20
 
     # voxel filter paprams
     odometrySurfLeafSize: 0.1                     # default: 0.4 - outdoor, 0.2 - indoor

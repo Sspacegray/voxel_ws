@@ -11,23 +11,23 @@
       joint_state_broadcaster:
         type: joint_state_broadcaster/JointStateBroadcaster
 
-      imu_sensor_broadcaster:
-        type: imu_sensor_broadcaster/IMUSensorBroadcaster
+      # imu_sensor_broadcaster:
+      #   type: imu_sensor_broadcaster/IMUSensorBroadcaster
 
   diff_drive_controller:
     ros__parameters:
-      left_wheel_names: ["left_wheel_joint"]
-      right_wheel_names: ["right_wheel_joint"]
-      wheel_separation: 0.52  # 角度标定用：若原地旋转角度偏小→减小该值，偏大→增大该值
-      wheel_radius: 0.0875    # 直线标定用：若直线行驶距离偏短→增大该值，偏长→减小该值
+      left_wheel_names: ["front_left_wheel_joint", "rear_left_wheel_joint"]
+      right_wheel_names: ["front_right_wheel_joint", "rear_right_wheel_joint"]
+      wheel_separation: 0.26  # 左右轮距离 26cm
+      wheel_radius: 0.08      # 轮子半径 8cm
       publish_rate: 20.0      
       odom_frame_id: odom
       base_frame_id: base_footprint
       use_stamped_vel: false  # false: 订阅 /cmd_vel_unstamped (Twist)，配合标定脚本改为发布到/cmd_vel_unstamped
-      enable_odom_tf: true    # 标定odom时需要由diff_drive_controller发布 odom→base_footprint TF，方便脚本通过TF读取位姿
+      enable_odom_tf: false    # 标定odom时需要由diff_drive_controller发布 odom→base_footprint TF，方便脚本通过TF读取位姿
 
       # Odometry settings
-      odom_only_twist: false  # 使用完整的odom信息
+      odom_only_twist: true  # 使用完整的odom信息
       position_feedback: true
       velocity_feedback: true
 
@@ -38,7 +38,7 @@
       linear:
         x:
           has_velocity_limits: true
-          max_velocity: 1.0
+          max_velocity: 2.0
           has_acceleration_limits: true
           max_acceleration: 0.8
       angular:
@@ -52,11 +52,11 @@
     ros__parameters:
       {}
 
-  imu_sensor_broadcaster:
-    ros__parameters:
-      sensor_name: "imu_sensor"
-      frame_id: "imu_link"
-      # 静态协方差矩阵 (可选)
-      static_covariance_orientation: [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
-      static_covariance_angular_velocity: [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
-      static_covariance_linear_acceleration: [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
+  # imu_sensor_broadcaster:
+  #   ros__parameters:
+  #     sensor_name: "imu_sensor"
+  #     frame_id: "imu_link"
+  #     # 静态协方差矩阵 (可选)
+  #     static_covariance_orientation: [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
+  #     static_covariance_angular_velocity: [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]
+  #     static_covariance_linear_acceleration: [0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.01]

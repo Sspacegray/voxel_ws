@@ -1,7 +1,43 @@
-# VSCode 配置和日志
-.vscode/
+# ROS 2 build system
+build/
+install/
 log/
+.colcon/
 
-# 大体积示例数据（不要推到 GitHub）
-src/robot_localization/point_lio/image/
-src/robot_localization/faster-lio/PCD/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+
+# C++
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+
+# IDE and Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Project specific temporary files and directories
+.serena/
+20251119_fast/
+
+# Large data files
+*.pcd
+*.bag
+*.mcap
+*.db3
+
+# Documentation generated
+AGENTS.md
+
+# System files
+.DS_Store
+Thumbs.db

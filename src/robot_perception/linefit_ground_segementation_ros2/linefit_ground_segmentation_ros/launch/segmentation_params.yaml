@@ -1,28 +1,101 @@
 ground_segmentation:
   ros__parameters:
-    n_threads: 6                # number of threads to use.
+    # ==================== 线程和性能参数 ====================
+    n_threads: 6                # 处理线程数，建议设置为 CPU 核心数
 
-    r_min: 0.4                 # minimum point distance.
-    r_max: 50.0                   # maximum point distance.
-    n_bins: 140                 # number of radial bins.
-    n_segments: 360             # number of radial segments.
+    # ==================== 距离和分割参数 ====================
+    r_min: 0.4                  # 最小点距离（米）- 小于此距离的点被忽略
+    r_max: 50.0                 # 最大点距离（米）- 超过此距离的点被忽略
+    n_bins: 140                 # 径向分桶数量 - 影响距离分辨率
+    n_segments: 360             # 角度分段数量 - 影响角度分辨率
 
-    max_dist_to_line: 0.15      # maximum vertical distance of point to line to be considered ground.
+    # ==================== 地面识别核心参数 ====================
+    # 【关键参数】点到拟合直线的最大垂直距离
+    # - 含义：如果点离拟合的地面直线距离小于此值，则认为是地面点
+    # - 对于45度倾斜LiDAR：由于视角倾斜，地面点分布更分散，需要增大此值
+    # - 调优：太小会把地面当障碍物，太大会把障碍物当地面
+    # - 建议范围：0.20 - 0.35
+    max_dist_to_line: 0.25
 
-    sensor_height: 0.725         # sensor height above ground.
-    min_slope: 0.0              # minimum slope of a ground line.
-    max_slope: 0.35              # maximum slope of a ground line.
-    max_fit_error: 0.075         # maximum error of a point during line fit.
-    long_threshold: 1.0         # distance between points after which they are considered far from each other.
-    max_long_height: 0.1        # maximum height change to previous point in long line.
-    max_start_height: 0.2       # maximum difference to estimated ground height to start a new line.
-    line_search_angle: 0.2      # how far to search in angular direction to find a line [rad].
+    # 【关键参数】传感器离地高度（米）
+    # - 含义：LiDAR 距离地面的垂直高度
+    # - 当前值：0.30m（base_link 到地面的高度）
+    # - 注意：对于倾斜安装，这是垂直投影高度
+    sensor_height: 0.30
 
-    gravity_aligned_frame: ""   # Frame which has its z axis aligned with gravity. (Sensor frame if empty.)
+    # 【关键参数】地面直线的最小斜率
+    # - 含义：地面拟合直线的最小倾角
+    # - 对于45度倾斜LiDAR：允许负斜率以适应倾斜视角
+    # - 原因：倾斜LiDAR看到的地面可能呈现负斜率
+    min_slope: -0.1
 
-    latch: false                # latch output topics or not
-    visualize: false            # visualize segmentation result - USE ONLY FOR DEBUGGING
+    # 【关键参数】地面直线的最大斜率  
+    # - 含义：地面拟合直线的最大倾角
+    # - 对于45度倾斜LiDAR：必须显著增大此值
+    # - 原因：倾斜45度的LiDAR看到的平坦地面会显示为约45度斜坡
+    # - 建议范围：0.5 - 0.8
+    max_slope: 0.5
 
-    input_topic: "livox/lidar/pointcloud"
-    obstacle_output_topic: "segmentation/obstacle"
-    ground_output_topic: "segmentation/ground"
+    # 拟合误差
+    # - 含义：点在地面直线拟合过程中允许的最大误差
+    # - 对于倾斜LiDAR：增大以容忍倾斜视角带来的拟合不确定性
+    max_fit_error: 0.15
+
+    # ==================== 长距离点处理参数 ====================
+    # 长距离阈值（米）
+    # - 含义：当相邻两点距离超过此值，认为它们相距较远
+    # - 作用：用于判断地面线段的连续性
+    long_threshold: 1.0
+
+    # 长距离点的最大高度变化（米）
+    # - 含义：长距离相邻点之间允许的最大高度差
+    # - 对于倾斜LiDAR：增大以适应斜视角
+    max_long_height: 0.15
+
+    # ==================== 地面线段起始参数 ====================
+    # 最大起始高度差（米）
+    # - 含义：新地面线段起点与估计地面高度的最大差异
+    # - 对于倾斜LiDAR：显著增大以容忍倾斜视角
+    max_start_height: 0.3
+
+    # 地面线搜索角度（弧度）
+    # - 含义：在角度方向搜索地面线的范围
+    # - 对于倾斜LiDAR：增大搜索角度以提高鲁棒性
+    # - 当前值：0.3 rad ≈ 17.2 度
+    line_search_angle: 0.3
+
+    # ==================== 坐标系参数 ====================
+    # 重力对齐坐标系
+    # - 含义：指定一个 Z 轴与重力对齐的坐标系
+    # - 留空：使用传感器自身坐标系（livox_frame）
+    # - 可选值："base_link" 如果希望在底盘坐标系中处理
+    # - 注意：由于 URDF 中已定义 livox_frame 的倾斜角度，此处留空即可
+    gravity_aligned_frame: ""
+
+    # ==================== 输出参数 ====================
+    latch: false                # 是否锁存输出话题（通常设为 false）
+    visualize: false            # 是否可视化分割结果（仅用于调试，会降低性能）
+
+    # 话题名称
+    input_topic: "livox/lidar/pointcloud"       # 输入点云话题
+    obstacle_output_topic: "segmentation/obstacle"  # 障碍物点云输出话题
+    ground_output_topic: "segmentation/ground"      # 地面点云输出话题
+
+# ==================== 参数调优建议 ====================
+# 
+# 【问题现象】          【调整方向】
+# 地面被识别为障碍物 → 增大 max_dist_to_line, max_slope, max_start_height
+# 障碍物被识别为地面 → 减小 max_dist_to_line, max_slope
+# 近处地面识别不准  → 调整 sensor_height, max_dist_to_line
+# 远处地面识别不准  → 调整 max_long_height, long_threshold
+#
+# 【倾斜角度的影响】
+# - 倾斜角度越大，max_slope 需要越大（接近倾斜角度的 tan 值）
+# - 45度倾斜：tan(45°) = 1.0，所以 max_slope 应至少 0.5-0.8
+# - max_dist_to_line 也需要增大，因为倾斜导致地面点分布范围更广
+#
+# 【实时调试】
+# 1. 设置 visualize: true 以在 RViz 中查看分割效果
+# 2. 添加话题：/segmentation/ground (绿色) 和 /segmentation/obstacle (红色)
+# 3. 观察地面是否被正确分类为绿色
+# 4. 根据实际效果微调上述参数

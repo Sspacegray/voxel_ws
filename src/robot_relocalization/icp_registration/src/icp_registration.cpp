@@ -112,6 +112,16 @@ IcpNode::IcpNode(const rclcpp::NodeOptions &options)
   tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
+  // Set up the map publisher
+  map_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("/map_pointcloud", rclcpp::QoS(1).transient_local());
+  // Publish the map once
+  sensor_msgs::msg::PointCloud2 map_msg;
+  pcl::toROSMsg(*cloud, map_msg);
+  map_msg.header.frame_id = map_frame_id_;
+  map_msg.header.stamp = now();
+  map_pub_->publish(map_msg);
+  RCLCPP_INFO(this->get_logger(), "Published global map with %ld points", cloud->size());
+
   // Set up the timer
   // timer_ = create_wall_timer(std::chrono::milliseconds(10), [this]() {
   //   if (is_ready_) {
@@ -161,7 +171,12 @@ void IcpNode::pointcloudCallback(
     pose_msg->header = msg->header;
     pose_msg->pose.pose = initial_pose_;
     initialPoseCallback(pose_msg);
-    first_scan_ = false;
+    if (is_ready_) {
+        first_scan_ = false;
+        RCLCPP_INFO(this->get_logger(), "ICP Initialized Successfully!");
+    } else {
+        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Waiting for TF to initialize ICP...");
+    }
   }
 }
 
@@ -192,9 +207,9 @@ void IcpNode::initialPoseCallback(
   Eigen::Matrix4d laser_to_odom = Eigen::Matrix4d::Identity();
   try {
     // Get odom to laser transform
+    // Use tf2::TimePoint() to get the latest available transform
     auto transform =
-        tf_buffer_->lookupTransform(laser_frame_id_, odom_frame_id_, now(),
-                                    rclcpp::Duration::from_seconds(10));
+        tf_buffer_->lookupTransform(laser_frame_id_, odom_frame_id_, tf2::TimePoint());
     // RCLCPP_INFO(get_logger(), "%s", transform.header.frame_id.c_str());
     Eigen::Vector3d t(transform.transform.translation.x,
                       transform.transform.translation.y,
@@ -208,7 +223,7 @@ void IcpNode::initialPoseCallback(
     laser_to_odom.block<3, 1>(0, 3) = t;
   } catch (tf2::TransformException &ex) {
     std::lock_guard<std::mutex> lock(mutex_);
-    RCLCPP_ERROR(this->get_logger(), "%s", ex.what());
+    RCLCPP_ERROR(this->get_logger(), "TF lookup failed: %s", ex.what());
     is_ready_ = false;
     return;
   }

@@ -68,6 +68,9 @@ void DdrMpcController::configure(
 
   RCLCPP_INFO(node_->get_logger(),
     "[%s] configured (dt=%.3f, horizon=%d)", plugin_name_.c_str(), horizon_dt_, horizon_steps_);
+
+  icr_sub_ = node_->create_subscription<geometry_msgs::msg::PointStamped>(
+    "EKF_ICR", 1, std::bind(&DdrMpcController::icrCallback, this, std::placeholders::_1));
 }
 
 void DdrMpcController::cleanup()
@@ -547,6 +550,13 @@ void DdrMpcController::setSpeedLimit(const double & speed_limit, const bool & pe
   } else {
     speed_limit_scale_ = clamp(speed_limit / max_speed_, 0.0, 1.0);
   }
+}
+
+void DdrMpcController::icrCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg)
+{
+  car_icr_.yr = msg->point.x;
+  car_icr_.yl = msg->point.y;
+  car_icr_.xv = msg->point.z;
 }
 
 }  // namespace ddr_navigation

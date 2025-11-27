@@ -60,21 +60,21 @@ def generate_launch_description():
             parameters=[parameter_file],
             output='log'
         ),
-        Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            arguments=["0", "0", "0", "-1.57", "0", "3.14", "odom", "lidar_odom"]
-        ),
-        Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            arguments=["-2", "0", "0", "0", "0", "0", "map", "odom"]
-        ),
-        Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            arguments=["6.5", "7.47", "0", "0", "0", "3.14", "map_decision", "map"]
-        ),
+        # Node(
+        #     package="tf2_ros",
+        #     executable="static_transform_publisher",
+        #     arguments=["0", "0", "0", "-1.57", "0", "3.14", "odom", "lidar_odom"]
+        # ),
+        # Node(
+        #     package="tf2_ros",
+        #     executable="static_transform_publisher",
+        #     arguments=["-2", "0", "0", "0", "0", "0", "map", "odom"]
+        # ),
+        # Node(
+        #     package="tf2_ros",
+        #     executable="static_transform_publisher",
+        #     arguments=["6.5", "7.47", "0", "0", "0", "3.14", "map_decision", "map"]
+        # ),
         # Node(
         #     package="tf2_ros",
         #     executable="static_transform_publisher",
@@ -86,11 +86,11 @@ def generate_launch_description():
         # output="log" ,
         # arguments=["0", "0", "0", "0", "0", "3.14", "odom", "lidar_odom"]
         # ),
-        # Node(
-        #     package='rviz2',
-        #     executable='rviz2',
-        #     name='rviz2',
-        #     arguments=['-d', rviz_config_file],
-        #     output='screen'
-        # )
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            name='rviz2',
+            arguments=['-d', rviz_config_file],
+            output='screen'
+        )
     ])
