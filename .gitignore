@@ -41,3 +41,8 @@ AGENTS.md
 # System files
 .DS_Store
 Thumbs.db
+
+# Large image files
+src/robot_localization/point_lio/image/example1.gif
+src/robot_localization/point_lio/image/example3.gif
+src/robot_localization/point_lio/image/example4.gif
