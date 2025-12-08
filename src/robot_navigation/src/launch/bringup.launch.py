@@ -33,30 +33,31 @@ def generate_launch_description():
     # We launch it here to ensure Fast-LIO gets data.
     # Note: If base bringup already launches it, this might conflict. 
     # But based on analysis, it was commented out.
-    livox_driver_node = Node(
-        package='livox_ros_driver2',
-        executable='livox_ros_driver2_node',
-        name='livox_lidar_publisher',
-        output='screen',
-        parameters=[
-            {'xfer_format': 4},
-            {'multi_topic': 0},
-            {'data_src': 0},
-            {'publish_freq': 10.0},
-            {'output_data_type': 0},
-            {'frame_id': 'livox_frame'},
-            {'lvx_file_path': '/home/livox/livox_test.lvx'},
-            {'user_config_path': PathJoinSubstitution([
-                livox_driver_dir,
-                "config",
-                "MID360_config.json"
-            ])},
-            {'cmdline_input_bd_code': 'livox0000000001'}
-        ],
-        remappings=[
-            ('/livox/lidar', '/livox/lidar') # Default
-        ]
-    )
+    # {{ DUPLICATE FIX: Commenting out because robot_base bringup DOES launch it. }}
+    # livox_driver_node = Node(
+    #     package='livox_ros_driver2',
+    #     executable='livox_ros_driver2_node',
+    #     name='livox_lidar_publisher',
+    #     output='screen',
+    #     parameters=[
+    #         {'xfer_format': 4},
+    #         {'multi_topic': 0},
+    #         {'data_src': 0},
+    #         {'publish_freq': 10.0},
+    #         {'output_data_type': 0},
+    #         {'frame_id': 'livox_frame'},
+    #         {'lvx_file_path': '/home/livox/livox_test.lvx'},
+    #         {'user_config_path': PathJoinSubstitution([
+    #             livox_driver_dir,
+    #             "config",
+    #             "MID360_config.json"
+    #         ])},
+    #         {'cmdline_input_bd_code': 'livox0000000001'}
+    #     ],
+    #     remappings=[
+    #         ('/livox/lidar', '/livox/lidar') # Default
+    #     ]
+    # )
 
     # 2. Fast-LIO (Odometry & Mapping/Pointcloud)
     # Launching node directly to allow parameter override for pcd_save
@@ -102,7 +103,7 @@ def generate_launch_description():
             'angle_max': 3.14159,
             'angle_increment': 0.0043,
             'scan_time': 0.1,
-            'range_min': 0.2,
+            'range_min': 0.6,  # 需要大于机器人footprint半径(~0.4m)以过滤车体点
             'range_max': 100.0,
             'use_inf': True,
             'inf_epsilon': 1.0
@@ -136,59 +137,59 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
-    # 5. AMCL Localization (Conditional)
+    # 5. AMCL Localization (Conditional) - 已禁用，使用 ICP + Fast-LIO 定位
     # Only launched if localization_mode is 'amcl'
     localization_mode = LaunchConfiguration('localization_mode')
     map_yaml_file = LaunchConfiguration('map')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
     
-    # 2. Localization (AMCL + Map Server)
+    # 2. Localization (AMCL + Map Server) - 已注释，使用 ICP 替代
     # Explicitly launch nodes to ensure correct configuration and lifecycle management
     
-    # Map Server
-    map_server_node = Node(
-        condition=IfCondition(PythonExpression(["'", localization_mode, "' == 'amcl'"])),
-        package='nav2_map_server',
-        executable='map_server',
-        name='map_server',
-        output='screen',
-        parameters=[params_file, {'yaml_filename': map_yaml_file}]
-    )
+    # # Map Server
+    # map_server_node = Node(
+    #     condition=IfCondition(PythonExpression(["'", localization_mode, "' == 'amcl'"])),
+    #     package='nav2_map_server',
+    #     executable='map_server',
+    #     name='map_server',
+    #     output='screen',
+    #     parameters=[params_file, {'yaml_filename': map_yaml_file}]
+    # )
 
-    # AMCL
-    amcl_node = Node(
-        condition=IfCondition(PythonExpression(["'", localization_mode, "' == 'amcl'"])),
-        package='nav2_amcl',
-        executable='amcl',
-        name='amcl',
-        output='screen',
-        parameters=[params_file]
-    )
+    # # AMCL
+    # amcl_node = Node(
+    #     condition=IfCondition(PythonExpression(["'", localization_mode, "' == 'amcl'"])),
+    #     package='nav2_amcl',
+    #     executable='amcl',
+    #     name='amcl',
+    #     output='screen',
+    #     parameters=[params_file]
+    # )
 
-    # Lifecycle Manager for Localization
-    lifecycle_manager_localization_node = Node(
-        condition=IfCondition(PythonExpression(["'", localization_mode, "' == 'amcl'"])),
-        package='nav2_lifecycle_manager',
-        executable='lifecycle_manager',
-        name='lifecycle_manager_localization',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time},
-                    {'autostart': autostart},
-                    {'node_names': ['map_server', 'amcl']}]
-    )
+    # # Lifecycle Manager for Localization
+    # lifecycle_manager_localization_node = Node(
+    #     condition=IfCondition(PythonExpression(["'", localization_mode, "' == 'amcl'"])),
+    #     package='nav2_lifecycle_manager',
+    #     executable='lifecycle_manager',
+    #     name='lifecycle_manager_localization',
+    #     output='screen',
+    #     parameters=[{'use_sim_time': use_sim_time},
+    #                 {'autostart': autostart},
+    #                 {'node_names': ['map_server', 'amcl']}]
+    # )
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('namespace', default_value=''),
         DeclareLaunchArgument('mapping', default_value='false', description='Enable map saving (PCD)'),
-        DeclareLaunchArgument('localization_mode', default_value='amcl', description='Localization mode: icp or amcl'),
+        DeclareLaunchArgument('localization_mode', default_value='icp', description='Localization mode: icp or amcl'),  # 默认改为 icp
         DeclareLaunchArgument('map', default_value='', description='Path to map yaml for AMCL'),
         DeclareLaunchArgument('params_file', default_value='', description='Nav2 parameters file'),
         DeclareLaunchArgument('autostart', default_value='true', description='Autostart Nav2 nodes'),
         
         robot_base_launch,
-        livox_driver_node,
+        # livox_driver_node,
         fast_lio_node,
         linefit_node,
         pointcloud_to_laserscan_node,
@@ -203,7 +204,9 @@ def generate_launch_description():
             launch_arguments={'use_sim_time': use_sim_time}.items()
         ),
         
-        map_server_node,
-        amcl_node,
-        lifecycle_manager_localization_node
+        # AMCL 相关节点已禁用，使用 ICP + Fast-LIO 定位
+        # map_server_node,
+        # amcl_node,
+        # lifecycle_manager_localization_node
     ])
+

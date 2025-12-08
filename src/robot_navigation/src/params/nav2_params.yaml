@@ -47,7 +47,7 @@ bt_navigator:
     use_sim_time: False
     global_frame: map
     robot_base_frame: base_link
-    odom_topic: /diff_drive_controller/odom
+    odom_topic: /Odometry
     bt_loop_duration: 10
     default_server_timeout: 20
     # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' use defaults:
@@ -119,7 +119,7 @@ controller_server:
     min_y_velocity_threshold: 0.05
     min_theta_velocity_threshold: 0.1
     failure_tolerance: 1.0 # The maximum duration in seconds the called controller plugin can fail
-    odom_topic: "diff_drive_controller/odom"
+    odom_topic: "/Odometry"
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] 
     controller_plugins: ["FollowPath"]
@@ -141,16 +141,16 @@ controller_server:
       minAngleDiff: 365.0 # if the angle difference is larger than this value, the robot will continue to adjust heading
       adjustHeadingSpeed: 0.2 # angular speed to adjust heading
       # 
-      time_steps: 180 # prediction horizon = time_steps x model_dt = 3s
-      model_dt: 0.014 # =1/controller_frequency
-      batch_size: 1500 # Count of randomly sampled candidate trajectories from current optimal control sequence in a given iteration. 1000 @ 50 Hz or 2000 @ 30 Hz seems to produce good results.
-      vx_std: 0.2
+      time_steps: 50 # prediction horizon = time_steps x model_dt = 50 x 0.05 = 2.5s
+      model_dt: 0.05 # Must be >= 1/controller_frequency (1/20 = 0.05)
+      batch_size: 1000 # Count of randomly sampled candidate trajectories from current optimal control sequence in a given iteration. 1000 @ 50 Hz or 2000 @ 30 Hz seems to produce good results.
+      vx_std: 0.6
       vy_std: 0.0  # 差速机器人不支持横向移动
-      wz_std: 0.3
-      vx_max: 0.5  # 保守速度设置
-      vx_min: -0.3  # 保守倒车速度
+      wz_std: 0.5
+      vx_max: 0.6  # 提高最大线速度
+      vx_min: -0.4  # 提高倒车速度
       vy_max: 0.0  # 差速机器人不支持横向移动
-      wz_max: 0.5  # 保守角速度
+      wz_max: 1.0  # 提高最大角速度
       iteration_count: 1 # Recommended to remain as 1 and instead prefer larger batch sizes.
       prune_distance: 4.0 # proportion to your maximum velocity and prediction horizon.
       transform_tolerance: 0.1 # Time tolerance for data transformations with TF (s).
@@ -286,9 +286,9 @@ local_costmap:
           marking: True
           data_type: "LaserScan"
           raytrace_max_range: 10.0
-          raytrace_min_range: 0.1
+          raytrace_min_range: 0.5
           obstacle_max_range: 10.0
-          obstacle_min_range: 0.2
+          obstacle_min_range: 0.5  # 需要大于机器人footprint半径(~0.4m)
       # local_obstacle_layer:
       #   plugin: "costmap_intensity::ObstacleLayerIntensity"
       #   enabled: True
@@ -369,9 +369,9 @@ global_costmap:
           marking: True
           data_type: "LaserScan"
           raytrace_max_range: 10.0
-          raytrace_min_range: 0.1
+          raytrace_min_range: 0.5
           obstacle_max_range: 10.0
-          obstacle_min_range: 0.2
+          obstacle_min_range: 0.5  # 需要大于机器人footprint半径(~0.4m)
 
 
 map_server:
@@ -565,11 +565,11 @@ velocity_smoother:
     smoothing_frequency: 80.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.5, 0.0, 0.5]  # 差速机器人，y方向=0
-    min_velocity: [-0.3, 0.0, -0.5]  # 保守倒车速度
-    max_accel: [0.5, 0.0, 0.5]  # 保守加速度
-    max_decel: [-0.5, 0.0, -0.5]  # 保守减速度
-    odom_topic: "diff_drive_controller/odom"
+    max_velocity: [0.6, 0.0, 1.0]  # 提高最大速度 [vx, vy, wz]
+    min_velocity: [-0.4, 0.0, -1.0]  # 提高倒车和转向速度
+    max_accel: [0.8, 0.0, 1.5]  # 提高加速度
+    max_decel: [-0.8, 0.0, -1.5]  # 提高减速度
+    odom_topic: "/Odometry"
     odom_duration: 0.1
     deadband_velocity: [0.05, 0.05, 0.05]
     velocity_timeout: 1.0
@@ -589,4 +589,4 @@ lifecycle_manager_localization:
   ros__parameters:
     use_sim_time: False
     autostart: True
-    node_names: ['map_server']
+    node_names: ['map_server', 'amcl']

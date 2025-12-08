@@ -129,32 +129,37 @@ def generate_launch_description():
                 ],
             ),
 
-            # Livox MID360 驱动 (含 IMU) - 已注释，改用外置 IMU
-            # Node(
-            #     package='livox_ros_driver2',
-            #     executable='livox_ros_driver2_node',
-            #     name='livox_lidar_publisher',
-            #     output='screen',
-            #     parameters=[
-            #         {'xfer_format': 4},    # 0-Pointcloud2(PointXYZRTL), 1-customized pointcloud format
-            #         {'multi_topic': 0},    # 0-All LiDARs share the same topic
-            #         {'data_src': 0},       # 0-lidar
-            #         {'publish_freq': 10.0},
-            #         {'output_data_type': 0},
-            #         {'frame_id': 'livox_frame'},
-            #         {'lvx_file_path': '/home/livox/livox_test.lvx'},
-            #         {'user_config_path': PathJoinSubstitution([
-            #             FindPackageShare("livox_ros_driver2"),
-            #             "config",
-            #             "MID360_config.json"
-            #         ])},
-            #         {'cmdline_input_bd_code': 'livox0000000001'}
-            #     ],
-            #     remappings=[
-            #         ('/livox/imu', imu_topic),
-            #         ('/livox/lidar', '/scan_points')
-            #     ]
-            # ),
+            # Livox MID360 Driver
+            Node(
+                package='livox_ros_driver2',
+                executable='livox_ros_driver2_node',
+                name='livox_lidar_publisher',
+                output='screen',
+                parameters=[
+                    {'xfer_format': 1},    # 0-Pointcloud2(PointXYZRTL), 1-customized pointcloud format
+                    {'multi_topic': 0},    # 0-All LiDARs share the same topic
+                    {'data_src': 0},       # 0-lidar
+                    {'publish_freq': 10.0},
+                    {'output_data_type': 0},
+                    {'frame_id': 'livox_frame'},
+                    {'lvx_file_path': '/home/livox/livox_test.lvx'},
+                    {'user_config_path': PathJoinSubstitution([
+                        FindPackageShare("livox_ros_driver2"),
+                        "config",
+                        "MID360_config.json"
+                    ])},
+                    {'cmdline_input_bd_code': 'livox0000000001'}
+                ]
+            ),
+
+            # Tilt Compensator Node (C++)
+            Node(
+                package='robot_base',
+                executable='tilt_compensator',
+                name='tilt_compensator',
+                output='screen',
+                parameters=[{'pitch_deg': 45.0}]
+            ),
     ]
 
     # 根据命名空间是否为空来决定是否使用PushRosNamespace和TF重映射

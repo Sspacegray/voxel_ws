@@ -358,13 +358,21 @@ hardware_interface::return_type RobotCarHardwareInterface::read(
     static int read_counter = 0;
     read_counter++;
 
+    // Force print to stderr to verify loop execution
+    // if (read_counter % 20 == 0) {
+    //     std::cerr << "[DEBUG] read() called. Counter: " << read_counter << std::endl;
+    // }
+
     // 1. Read all available data into the buffer
     if (serial_port_.IsDataAvailable())
     {
         try
         {
             std::vector<uint8_t> new_data;
-            serial_port_.Read(new_data, 0, 0); // Read whatever is available
+            size_t available_bytes = serial_port_.GetNumberOfBytesAvailable();
+            if (available_bytes > 0) {
+                serial_port_.Read(new_data, available_bytes, 10); // Read available bytes with short timeout
+            }
             serial_buffer_.insert(serial_buffer_.end(), new_data.begin(), new_data.end());
             
             // Debug: Print received data size
@@ -404,9 +412,8 @@ hardware_interface::return_type RobotCarHardwareInterface::read(
             REPORT_DATA report_data;
             memcpy(&report_data, serial_buffer_.data(), sizeof(REPORT_DATA));
 
-            // Verify checksum
-            uint8_t checksum = CalcChecksum(serial_buffer_.data(), sizeof(REPORT_DATA));
-            if (checksum == report_data.Sum)
+            // Verify Footer (Last byte should be 0xAA)
+            if (report_data.Sum == 0xAA)
             {
                 // Valid packet, process it
                 double robot_vx = static_cast<double>(report_data.Speed_X) / 1000.0;
@@ -428,7 +435,7 @@ hardware_interface::return_type RobotCarHardwareInterface::read(
                 
                 // Debug: Log successful publish
                 // if (read_counter % 50 == 0) {
-                //    RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "Published CarInfo: vx=%.2f", robot_vx);
+                //    RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), "Published CarInfo: vx=%.2f, power=%.2f", robot_vx, report_data.power);
                 // }
 
                 // Remove processed packet from buffer
@@ -436,9 +443,18 @@ hardware_interface::return_type RobotCarHardwareInterface::read(
             }
             else
             {
-                // Checksum failed, remove header and continue search
+                // Footer mismatch
                 RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"), 
-                    "Checksum mismatch! Expected: %02x, Calc: %02x", report_data.Sum, checksum);
+                    "Footer mismatch! Expected: 0xAA, Received: %02x", report_data.Sum);
+                
+                // Debug: Print the failed packet
+                std::stringstream ss;
+                ss << "Failed Packet: ";
+                for (size_t i = 0; i < sizeof(REPORT_DATA); ++i) {
+                    ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(serial_buffer_[i]) << " ";
+                }
+                RCLCPP_WARN(rclcpp::get_logger("RobotCarHardwareInterface"), "%s", ss.str().c_str());
+
                 serial_buffer_.erase(serial_buffer_.begin()); 
             }
         }
@@ -461,11 +477,12 @@ hardware_interface::return_type RobotCarHardwareInterface::write(
     // Debug log for write (throttled)
     static int write_counter = 0;
     write_counter++;
-    // if (write_counter % 20 == 0) {
-    //     RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), 
-    //         "write() called. cmd_vel_L=%.3f, cmd_vel_R=%.3f -> vx=%.3f, vth=%.3f", 
-    //         hw_command_velocity_left_, hw_command_velocity_right_, vx, vth);
-    // }
+    if (write_counter % 20 == 0) {
+        // std::cerr << "[DEBUG] write() called. Counter: " << write_counter << std::endl;
+        // RCLCPP_INFO(rclcpp::get_logger("RobotCarHardwareInterface"), 
+        //     "write() called. cmd_vel_L=%.3f, cmd_vel_R=%.3f -> vx=%.3f, vth=%.3f", 
+        //     hw_command_velocity_left_, hw_command_velocity_right_, vx, vth);
+    }
 
     CMD_DATA cmd_data;
     cmd_data.Head_1 = 0xA0;

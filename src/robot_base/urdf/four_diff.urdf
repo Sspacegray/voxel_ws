@@ -46,8 +46,8 @@
   <joint name="livox_joint" type="fixed">
     <parent link="base_link"/>
     <child link="livox_frame"/>
-    <origin rpy="0 -0.785398 0" xyz="0.34 0 0.3"/>
-    <!-- 绕 Y 轴向上倾斜 45 度补偿物理向下角度，使scan水平 -->
+    <origin rpy="0 0 0" xyz="0.34 0 0.3"/>
+    <!-- 数据已预处理为水平，此处设为0 -->
   </joint>
   <link name="front_left_wheel_link">
     <visual>

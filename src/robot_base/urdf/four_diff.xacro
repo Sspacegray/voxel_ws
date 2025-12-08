@@ -56,7 +56,7 @@
   <joint name="livox_joint" type="fixed">
     <parent link="base_link"/>
     <child link="livox_frame"/>
-    <origin xyz="${body_length/2} 0 ${body_height}" rpy="0 -0.785398 0"/> <!-- 绕 Y 轴向上倾斜 45 度补偿物理向下角度，使scan水平 -->
+    <origin xyz="${body_length/2} 0 ${body_height}" rpy="0 0 0"/> <!-- 数据已预处理为水平，此处设为0 -->
   </joint>
 
   <!-- Wheels Macro -->

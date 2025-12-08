@@ -3,16 +3,16 @@
         feature_extract_enable: false
         point_filter_num: 3
         max_iteration: 3
-        filter_size_surf: 0.3  #表面点降采样尺寸
-        filter_size_map: 0.3  #地图降采样尺寸
+        filter_size_surf: 0.5  # Increased for speed
+        filter_size_map: 0.5  # Increased for speed
         cube_side_length: 1000.0
         runtime_pos_log_enable: false
         map_file_path: "./test.pcd"
 
         common:
-            lid_topic:  "/livox/lidar"
-            imu_topic:  "/livox/imu"
-            time_sync_en: false         # ONLY turn on when external time synchronization is really not possible
+            lid_topic:  "/lidar/cloud"
+            imu_topic:  "/lidar/imu"
+            time_sync_en: false         # ONLY turn on when external time synchronization is really not available
             time_offset_lidar_to_imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
                                         # This param will take effect no matter what time_sync_en is. So if the time offset is not known exactly, please set as 0.0
 
@@ -41,10 +41,8 @@
             effect_map_en: false         # true: publish Effects
             map_en: true                 # true: publish Map cloud
             scan_publish_en:  true       # false: close all the point cloud output
-            dense_publish_en: true      # 降采样参数 false: low down the points number in a global-frame point clouds scan.
+            dense_publish_en: false      # Disable dense publish for speed
             scan_bodyframe_pub_en: true  # true: output the point cloud scans in IMU-body-frame
 
         pcd_save:
-            pcd_save_en: true
-            interval: -1                 # how many LiDAR frames saved in each pcd file; 
-                                        # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
+            pcd_save_en: false           # Disable O(N) accumulation!

@@ -22,7 +22,10 @@ endif()
 find_package(rclpy REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(tf2 REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)   # 如果你想用 tf2_geometry_msgs.hpp
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(livox_ros_driver2 REQUIRED)
+find_package(eigen3_cmake_module REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # Build custom messages and services
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -69,15 +72,31 @@ rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typ
 target_link_libraries(robotcar_hardware_interface ${cpp_typesupport_target})
 
 # Export plugin for ros2_control
+# Export plugin for ros2_control
 pluginlib_export_plugin_description_file(hardware_interface src/robotcar_hardware.xml)
+
+# Build Tilt Compensator
+add_executable(tilt_compensator src/tilt_compensator.cpp)
+target_include_directories(tilt_compensator PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  ${Eigen3_INCLUDE_DIRS}
+)
+ament_target_dependencies(tilt_compensator
+  rclcpp
+  sensor_msgs
+  livox_ros_driver2
+  Eigen3
+)
 
 # Install targets
 install(TARGETS
     robotcar_hardware_interface
     laser_filter_node
+    tilt_compensator
+    ARCHIVE DESTINATION lib
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
-    RUNTIME DESTINATION bin
+    RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
@@ -89,7 +108,6 @@ install(
     PROGRAMS
         scripts/angular_calibration.py
         scripts/linear_calibration.py
-        scripts/sync_laser_params.py
     DESTINATION lib/${PROJECT_NAME}
 )
 

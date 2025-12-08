@@ -3,7 +3,7 @@
 /**:
   controller_manager:
     ros__parameters:
-      update_rate: 20  
+      update_rate: 50  
 
       diff_drive_controller:
         type: diff_drive_controller/DiffDriveController
@@ -27,7 +27,7 @@
       enable_odom_tf: false    # 标定odom时需要由diff_drive_controller发布 odom→base_footprint TF，方便脚本通过TF读取位姿
 
       # Odometry settings
-      odom_only_twist: true  # 使用完整的odom信息
+      odom_only_twist: false  # 使用完整的odom信息 设置为true就没有pose信息
       position_feedback: true
       velocity_feedback: true
 

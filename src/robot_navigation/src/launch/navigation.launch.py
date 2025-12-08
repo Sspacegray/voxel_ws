@@ -18,7 +18,7 @@ def generate_launch_description():
     # Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
     use_rviz = LaunchConfiguration('use_rviz', default='true')
-    localization_mode = LaunchConfiguration('localization_mode', default='amcl')
+    localization_mode = LaunchConfiguration('localization_mode', default='icp')
     
     # 2D Map for Nav2 (Costmaps)
     map_yaml_path = LaunchConfiguration('map', default='/home/suja/voxel_ws/src/robot_navigation/src/map/1126.yaml')
@@ -166,18 +166,18 @@ def generate_launch_description():
     )
 
     # 3. RViz
-    # 3. RViz
-    rviz_config_file = PathJoinSubstitution(
+    # 3. RViz (Explicit Node to ensure it launches)
+    rviz_config = PathJoinSubstitution(
         [FindPackageShare("robot_navigation"), "rviz", "nav2_default_view.rviz"]
     )
 
     rviz_node = Node(
-        condition=IfCondition(use_rviz),
+        # condition=IfCondition(use_rviz), # Force launch
         package='rviz2',
         executable='rviz2',
         name='rviz2',
         output='screen',
-        arguments=['-d', rviz_config_file],
+        arguments=['-d', rviz_config],
         remappings=[('/map', 'map'),
                     ('/tf', 'tf'),
                     ('/tf_static', 'tf_static'),
@@ -188,12 +188,12 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
-        DeclareLaunchArgument('map', default_value='/home/suja/voxel_ws/src/robot_navigation/src/map/1126.yaml', description='Path to 2D Map YAML file for Nav2'),
+        DeclareLaunchArgument('map', default_value=os.path.join(robot_navigation_dir, 'map', '1126.yaml'), description='Path to 2D Map YAML file for Nav2'),
         DeclareLaunchArgument('pcd_file', default_value='/home/suja/voxel_ws/test.pcd', description='Path to 3D PCD map file for ICP'),
         DeclareLaunchArgument('params_file', default_value=os.path.join(robot_navigation_dir, 'params', 'nav2_params.yaml'), description='Nav2 parameters'),
         DeclareLaunchArgument('use_rviz', default_value='true', description='Whether to start RVIZ'),
         DeclareLaunchArgument('autostart', default_value='true', description='Automatically startup the nav2 stack'),
-        DeclareLaunchArgument('localization_mode', default_value='amcl', description='Localization mode: icp or amcl'),
+        DeclareLaunchArgument('localization_mode', default_value='icp', description='Localization mode: icp or amcl'),
 
         localization_launch,
         

@@ -69,8 +69,8 @@ def generate_launch_description():
         DeclareLaunchArgument('pcd_file', default_value='/home/suja/voxel_ws/test.pcd', description='Path to PCD map file for ICP'),
         DeclareLaunchArgument('use_rviz', default_value='true', description='Whether to start RVIZ'),
         DeclareLaunchArgument('localization_mode', default_value='amcl', description='Localization mode: icp or amcl'),
-        DeclareLaunchArgument('map', default_value='', description='Path to map yaml for AMCL'),
-        DeclareLaunchArgument('params_file', default_value='', description='Nav2 parameters file'),
+        DeclareLaunchArgument('map', default_value=os.path.join(robot_navigation_dir, 'map', '1126.yaml'), description='Path to map yaml for AMCL'),
+        DeclareLaunchArgument('params_file', default_value=os.path.join(robot_navigation_dir, 'params', 'nav2_params.yaml'), description='Nav2 parameters file'),
         DeclareLaunchArgument('autostart', default_value='true', description='Autostart Nav2 nodes'),
         
         bringup_launch,

@@ -1,0 +1,7 @@
+# Global Rules
+
+1. 交互过程所有回答全程使用中文
+2. 所有的思考过程也需要返回中文
+3. 规定了每次回答都要返回模型名称、模型大小、型号、更新日期等信息
+4. 长任务优先调用mcp 进行拆解 和我确定了工作流程之后再进行实现
+5. 所有生成的 Artifacts (task.md, implementation_plan.md, walkthrough.md 等) 必须使用中文编写。
