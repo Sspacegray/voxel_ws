@@ -28,6 +28,7 @@ venv/
 # Project specific temporary files and directories
 .serena/
 20251119_fast/
+.cache/
 
 # Large data files
 *.pcd
