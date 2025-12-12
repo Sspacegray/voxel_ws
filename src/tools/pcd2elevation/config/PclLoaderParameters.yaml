@@ -1,0 +1,34 @@
+pcl_grid_map_extraction:
+  num_processing_threads: 2 # 处理线程数
+  cloud_transform:
+    is_apply_rigidbody_trans: true # 是否应用刚体变换
+    translation:
+      x: 0.0 # x轴平移
+      y: 0.0 # y轴平移
+      z: 0.0 # z轴平移
+    rotation: #intrinsic rotation X-Y-Z (r-p-y)sequence
+      r: 0.0 # 滚转角 (Roll)
+      p: 0.0 # 俯仰角 (Pitch)
+      y: 0.0 # 偏航角 (Yaw)
+  cluster_extraction:
+    cluster_tolerance: 0.05 # 聚类容差 (搜索半径)
+    min_num_points: 1 # 最小点数
+    max_num_points: 1000000 # 最大点数
+  outlier_removal:
+    is_remove_outliers: true # 是否移除离群点
+    mean_K: 8 # 均值K (邻居数量)
+    stddev_threshold: 0.1 # 标准差阈值
+  downsampling:
+    is_downsample_cloud: true # 是否下采样点云
+    voxel_size:
+      x: 0.05 # x轴体素大小
+      y: 0.05 # y轴体素大小
+      z: 0.05 # z轴体素大小
+  grid_map:
+    min_num_points_per_cell: 1 # 每个网格单元的最小点数
+    resolution: 0.2 # 栅格地图分辨率
+    # 0: Smallest value among the average values ​​of each cluster (每个聚类平均值中的最小值)
+    # 1: Mean value of the cluster with the most points (点数最多的聚类的平均值)
+    height_type: 1 # 高度计算类型
+    # For height_type 1
+    height_thresh: 1.0 # 高度阈值 (用于类型1)
