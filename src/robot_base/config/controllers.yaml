@@ -38,15 +38,15 @@
       linear:
         x:
           has_velocity_limits: true
-          max_velocity: 2.0
+          max_velocity: 0.5
           has_acceleration_limits: true
           max_acceleration: 0.8
       angular:
         z:
           has_velocity_limits: true
-          max_velocity: 2.0
+          max_velocity: 1.0
           has_acceleration_limits: true
-          max_acceleration: 1.6
+          max_acceleration: 0.5
 
   joint_state_broadcaster:
     ros__parameters:

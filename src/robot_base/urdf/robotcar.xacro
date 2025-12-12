@@ -18,6 +18,7 @@
   <!-- 轮子参数 -->
   <xacro:property name="wheel_radius" value="0.08"/>
   <xacro:property name="wheel_length" value="0.03"/>
+  <xacro:property name="caster_radius" value="0.04"/>
   
   <!-- 轮距参数 -->
   <!-- 轮子边缘外切线距离前后4cm -->
@@ -123,19 +124,19 @@
   <xacro:wheel_link name="right" parent_link="base_link" 
                     x_offset="${wheelbase_half}" y_offset="-${track_half}" z_offset="${wheel_z_offset}"/>
 
-  <!-- 左后轮 (从动/Mimic) -->
-  <link name="rear_left_wheel_link">
+  <!-- ======================== 后置万向轮 ======================== -->
+  <link name="rear_caster_link">
     <visual>
-      <origin xyz="0 0 0" rpy="${M_PI/2} 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+        <sphere radius="${caster_radius}"/>
       </geometry>
       <material name="black"/>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="${M_PI/2} 0 0"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
+        <sphere radius="${caster_radius}"/>
       </geometry>
     </collision>
     <inertial>
@@ -143,41 +144,19 @@
       <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
     </inertial>
   </link>
-  <joint name="rear_left_wheel_joint" type="continuous">
+
+  <joint name="rear_caster_joint" type="fixed">
     <parent link="base_link"/>
-    <child link="rear_left_wheel_link"/>
-    <origin xyz="-${wheelbase_half} ${track_half} ${wheel_z_offset}" rpy="0 0 0"/>
-    <axis xyz="0 1 0"/>
-    <mimic joint="left_wheel_joint" multiplier="1.0" offset="0.0"/>
+    <child link="rear_caster_link"/>
+    <origin xyz="-${wheelbase_half} 0 ${caster_radius - base_link_z_offset}" rpy="0 0 0"/>
   </joint>
 
-  <!-- 右后轮 (从动/Mimic) -->
-  <link name="rear_right_wheel_link">
-    <visual>
-      <origin xyz="0 0 0" rpy="${M_PI/2} 0 0"/>
-      <geometry>
-        <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
-      </geometry>
-      <material name="black"/>
-    </visual>
-    <collision>
-      <origin xyz="0 0 0" rpy="${M_PI/2} 0 0"/>
-      <geometry>
-        <cylinder length="${wheel_length}" radius="${wheel_radius}"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="0.5"/>
-      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
-    </inertial>
-  </link>
-  <joint name="rear_right_wheel_joint" type="continuous">
-    <parent link="base_link"/>
-    <child link="rear_right_wheel_link"/>
-    <origin xyz="-${wheelbase_half} -${track_half} ${wheel_z_offset}" rpy="0 0 0"/>
-    <axis xyz="0 1 0"/>
-    <mimic joint="right_wheel_joint" multiplier="1.0" offset="0.0"/>
-  </joint>
+  <!-- Gazebo simulation: Frictionless caster -->
+  <gazebo reference="rear_caster_link">
+    <mu1>0.0</mu1>
+    <mu2>0.0</mu2>
+    <material>Gazebo/Black</material>
+  </gazebo>
 
   <!-- ======================== 传感器 ======================== -->
   

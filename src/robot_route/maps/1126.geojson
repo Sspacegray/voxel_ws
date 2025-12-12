@@ -1,0 +1,316 @@
+{
+    "type": "FeatureCollection",
+    "name": "graph",
+    "crs": {
+        "type": "name",
+        "properties": {
+            "name": "urn:ogc:def:crs:EPSG::3857"
+        }
+    },
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 0,
+                "frame": "map"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    1.6806280145629504,
+                    0.15430646829608463
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 1,
+                "frame": "map"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    3.0119063540153554,
+                    1.1100960453388282
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 2,
+                "frame": "map"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    2.056116776972594,
+                    2.3133668521515958
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 3,
+                "frame": "map"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    17.17807329947042,
+                    13.031864251845306
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 4,
+                "frame": "map"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    31.139428192702034,
+                    22.931113442645234
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 5,
+                "frame": "map"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    25.131607994147593,
+                    31.73803168825345
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 6,
+                "frame": "map"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    6.698523294037383,
+                    18.903143082250782
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 7,
+                "frame": "map"
+            },
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -4.566139578252193,
+                    11.393367834057731
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 0,
+                "startid": 0,
+                "endid": 1,
+                "weight": 1.0
+            },
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [
+                    [
+                        [
+                            1.6806280145629504,
+                            0.15430646829608463
+                        ],
+                        [
+                            3.0119063540153554,
+                            1.1100960453388282
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 1,
+                "startid": 1,
+                "endid": 2,
+                "weight": 1.0
+            },
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [
+                    [
+                        [
+                            3.0119063540153554,
+                            1.1100960453388282
+                        ],
+                        [
+                            2.056116776972594,
+                            2.3133668521515958
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 2,
+                "startid": 2,
+                "endid": 3,
+                "weight": 1.0
+            },
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [
+                    [
+                        [
+                            2.056116776972594,
+                            2.3133668521515958
+                        ],
+                        [
+                            17.17807329947042,
+                            13.031864251845306
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 3,
+                "startid": 3,
+                "endid": 4,
+                "weight": 1.0
+            },
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [
+                    [
+                        [
+                            17.17807329947042,
+                            13.031864251845306
+                        ],
+                        [
+                            31.139428192702034,
+                            22.931113442645234
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 4,
+                "startid": 4,
+                "endid": 5,
+                "weight": 1.0
+            },
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [
+                    [
+                        [
+                            31.139428192702034,
+                            22.931113442645234
+                        ],
+                        [
+                            25.131607994147593,
+                            31.73803168825345
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 5,
+                "startid": 5,
+                "endid": 6,
+                "weight": 1.0
+            },
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [
+                    [
+                        [
+                            25.131607994147593,
+                            31.73803168825345
+                        ],
+                        [
+                            6.698523294037383,
+                            18.903143082250782
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 6,
+                "startid": 6,
+                "endid": 7,
+                "weight": 1.0
+            },
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [
+                    [
+                        [
+                            6.698523294037383,
+                            18.903143082250782
+                        ],
+                        [
+                            -4.566139578252193,
+                            11.393367834057731
+                        ]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": 7,
+                "startid": 7,
+                "endid": 2,
+                "weight": 1.0
+            },
+            "geometry": {
+                "type": "MultiLineString",
+                "coordinates": [
+                    [
+                        [
+                            -4.566139578252193,
+                            11.393367834057731
+                        ],
+                        [
+                            2.056116776972594,
+                            2.3133668521515958
+                        ]
+                    ]
+                ]
+            }
+        }
+    ]
+}

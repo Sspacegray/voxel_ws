@@ -545,6 +545,7 @@ ros2 run rqt_graph rqt_graph
 3. **编译项目**
    ```bash
    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+   #其中cmake参数Release 配置编译，通常会启用 -O3/-DNDEBUG 等优化并关闭断言，生成体积更小、运行更快的可执行文件
    ```
 
 4. **配置环境变量**

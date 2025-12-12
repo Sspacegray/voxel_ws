@@ -46,6 +46,16 @@ def generate_launch_description():
         }.items()
     )
 
+    # 1.1 Route Server Launch
+    route_launch_dir = os.path.join(get_package_share_directory('robot_route'), 'launch')
+    route_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(route_launch_dir, 'route_demo.launch.py')),
+        launch_arguments={
+            'use_sim_time': use_sim_time,
+            'params_file': params_file
+        }.items()
+    )
+
     # 2. Explicit Nav2 Nodes Launch (Replacing nav2_bringup)
     
     # Lifecycle nodes to be managed
@@ -148,6 +158,7 @@ def generate_launch_description():
         parameters=[
             {'use_sim_time': use_sim_time},
             {'autostart': autostart},
+            {'bond_timeout': 10.0},
             {'node_names': lifecycle_nodes_localization}
         ]
     )
@@ -161,6 +172,7 @@ def generate_launch_description():
         parameters=[
             {'use_sim_time': use_sim_time},
             {'autostart': autostart},
+            {'bond_timeout': 10.0},
             {'node_names': lifecycle_nodes_navigation}
         ]
     )
@@ -196,6 +208,7 @@ def generate_launch_description():
         DeclareLaunchArgument('localization_mode', default_value='icp', description='Localization mode: icp or amcl'),
 
         localization_launch,
+        route_launch,
         
         # Nav2 Nodes
         map_server_node,

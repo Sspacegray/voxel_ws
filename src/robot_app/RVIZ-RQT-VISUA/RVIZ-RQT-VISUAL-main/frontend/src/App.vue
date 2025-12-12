@@ -56,222 +56,121 @@ export default {
 }
 
 html, body {
-  font-family: 'Segoe UI', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #0a0e27;
-  color: #ffffff;
-  overflow: auto;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0f172a; /* Deep Space Blue */
+  color: #e2e8f0;
+  overflow: hidden;
+  height: 100vh;
 }
 
 #app {
   height: 100vh;
-  background: linear-gradient(135deg, #0a0e27 0%, #1e1e3f 50%, #2a2a5a 100%);
   position: relative;
+  background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
 }
 
-/* 科技感背景效果 */
-#app::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(120, 255, 198, 0.05) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 1;
-}
-
+/* 隐藏旧的Header */
 .app-header {
-  height: 50px;
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  position: relative;
-  z-index: 100;
-  box-shadow: 0 1px 20px rgba(0, 0, 0, 0.3);
+  display: none !important;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-}
-
-.app-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(45deg, #00d4ff, #0099cc);
-  border-radius: 6px;
-  position: relative;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-}
-
-.logo-icon::before {
-  content: '';
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  right: 6px;
-  bottom: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-}
-
-.logo-icon::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 8px;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: pulse 2s infinite ease-in-out;
-}
-
-.app-title {
-  font-size: 18px;
-  font-weight: 600;
-  background: linear-gradient(90deg, #ffffff, #94a3b8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.app-content {
-  height: calc(100vh - 50px);
-  position: relative;
-  z-index: 2;
-  overflow: auto;
-}
-
-/* 脉冲动画 */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: translate(-50%, -50%) scale(1.2);
-  }
-}
-
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
-  border-radius: 6px;
-  margin: 2px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.6);
-  border-radius: 6px;
-  transition: background 0.3s ease;
-  border: 2px solid transparent;
-  background-clip: content-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.8);
-  background-clip: content-box;
-}
-
-::-webkit-scrollbar-thumb:active {
-  background: rgba(59, 130, 246, 1.0);
-  background-clip: content-box;
-}
-
-::-webkit-scrollbar-corner {
-  background: rgba(15, 23, 42, 0.5);
-}
-
-/* Element Plus 主题定制 */
+/* Element Plus 主题定制 (Sci-Fi Dashboard) */
 :root {
-  --el-color-primary: #00d4ff;
-  --el-color-success: #00ff88;
-  --el-color-warning: #ffaa00;
-  --el-color-danger: #ff4757;
-  --el-color-info: #74b9ff;
+  --el-color-primary: #06b6d4; /* Cyan 500 - Neon Blue */
+  --el-color-success: #10b981; /* Emerald 500 */
+  --el-color-warning: #f59e0b; /* Amber 500 */
+  --el-color-danger: #ef4444; /* Red 500 */
+  --el-color-info: #64748b; /* Slate 500 */
   
-  --el-bg-color: rgba(15, 23, 42, 0.8);
-  --el-bg-color-page: rgba(15, 23, 42, 0.8);
-  --el-bg-color-overlay: rgba(15, 23, 42, 0.9);
+  --el-bg-color: #0f172a;
+  --el-bg-color-page: #0f172a;
+  --el-bg-color-overlay: #1e293b;
   
-  --el-text-color-primary: #ffffff;
-  --el-text-color-regular: #e2e8f0;
+  --el-text-color-primary: #f1f5f9;
+  --el-text-color-regular: #cbd5e1;
   --el-text-color-secondary: #94a3b8;
   --el-text-color-placeholder: #64748b;
   
-  --el-border-color: rgba(148, 163, 184, 0.2);
-  --el-border-color-light: rgba(148, 163, 184, 0.1);
-  --el-border-color-lighter: rgba(148, 163, 184, 0.05);
-  --el-border-color-extra-light: rgba(148, 163, 184, 0.03);
+  --el-border-color: #334155;
+  --el-border-color-light: #1e293b;
+  --el-border-color-lighter: #0f172a;
+  
+  /* 自定义仪表盘变量 */
+  --dashboard-bg: rgba(15, 23, 42, 0.85);
+  --dashboard-border: 1px solid rgba(6, 182, 212, 0.2);
+  --dashboard-glow: 0 0 15px rgba(6, 182, 212, 0.15);
 }
 
-/* Element Plus 组件样式覆盖 */
-.el-card {
-  background: rgba(15, 23, 42, 0.6) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(148, 163, 184, 0.1) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+/* 通用面板样式 */
+.dashboard-panel {
+  background: var(--dashboard-bg);
+  backdrop-filter: blur(12px);
+  border: var(--dashboard-border);
+  box-shadow: var(--dashboard-glow);
+  border-radius: 4px; /* Tech style often uses sharper corners */
+  color: #fff;
 }
 
+/* Element Plus 组件样式覆盖 - 科技感 */
 .el-button {
-  backdrop-filter: blur(10px) !important;
+  background: rgba(30, 41, 59, 0.5) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  color: #cbd5e1 !important;
+  border-radius: 2px !important; /* Sharp corners */
+  transition: all 0.3s ease;
+}
+
+.el-button:hover {
+  background: rgba(6, 182, 212, 0.2) !important;
+  border-color: #06b6d4 !important;
+  color: #06b6d4 !important;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
 }
 
 .el-button--primary {
-  background: linear-gradient(45deg, #00d4ff, #0099cc) !important;
-  border: none !important;
-  box-shadow: 0 2px 10px rgba(0, 212, 255, 0.3) !important;
+  background: rgba(6, 182, 212, 0.2) !important;
+  border-color: #06b6d4 !important;
+  color: #06b6d4 !important;
 }
 
-.el-button--success {
-  background: linear-gradient(45deg, #00ff88, #00cc66) !important;
-  border: none !important;
-  box-shadow: 0 2px 10px rgba(0, 255, 136, 0.3) !important;
+.el-button--primary:hover {
+  background: #06b6d4 !important;
+  color: #000 !important;
+}
+
+.el-button--danger {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
 }
 
 .el-input__wrapper {
-  background: rgba(15, 23, 42, 0.6) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  background: rgba(15, 23, 42, 0.8) !important;
   box-shadow: none !important;
+  border: 1px solid #334155 !important;
 }
 
-.el-select .el-input__wrapper {
-  background: rgba(15, 23, 42, 0.6) !important;
+.el-input__wrapper.is-focus {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 0 5px rgba(6, 182, 212, 0.3) !important;
 }
 
-.el-popper {
-  background: rgba(15, 23, 42, 0.9) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+/* 滚动条美化 (Dark) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4;
 }
 </style>

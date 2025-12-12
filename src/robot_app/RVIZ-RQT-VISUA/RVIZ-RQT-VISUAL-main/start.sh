@@ -9,17 +9,17 @@ echo "================================"
 check_dependencies() {
     echo "📋 检查依赖..."
     
-    if ! command -v docker &> /dev/null; then
+    if ! command -v docker > /dev/null 2>&1; then
         echo "❌ Docker 未安装，请先安装 Docker"
         exit 1
     fi
     
-    if ! command -v node &> /dev/null && [ "$1" != "docker" ]; then
+    if ! command -v node > /dev/null 2>&1 && [ "$1" != "docker" ]; then
         echo "❌ Node.js 未安装，请先安装 Node.js 18+ 或使用 Docker 模式"
         exit 1
     fi
     
-    if ! command -v python3 &> /dev/null && [ "$1" != "docker" ]; then
+    if ! command -v python3 > /dev/null 2>&1 && [ "$1" != "docker" ]; then
         echo "❌ Python3 未安装，请先安装 Python 3.9+ 或使用 Docker 模式"
         exit 1
     fi
@@ -35,16 +35,17 @@ start_local() {
     echo "🐍 启动后端服务..."
     cd backend
     
-    if [ ! -d "venv" ]; then
-        echo "📦 创建虚拟环境..."
-        python3 -m venv venv
+    if [ ! -d "venv" ] || [ ! -f "venv/pyvenv.cfg" ] || ! grep -q "include-system-site-packages = true" venv/pyvenv.cfg; then
+        echo "📦 创建/重建虚拟环境 (支持系统包)..."
+        rm -rf venv
+        python3 -m venv --system-site-packages venv
     fi
     
     source venv/bin/activate
     pip install -r requirements.txt
     
     echo "🚀 启动 FastAPI 服务 (端口 8000)..."
-    python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
+    python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
     BACKEND_PID=$!
     
     cd ..
@@ -64,16 +65,21 @@ start_local() {
     
     cd ..
     
+    echo "🔄 启动点云TF变换服务..."
+    python3 backend/cloud_transformer.py &
+    TRANSFORMER_PID=$!
+
     echo ""
     echo "✅ 系统启动完成！"
     echo "🌐 前端地址: http://localhost:3000"
     echo "🔧 后端 API: http://localhost:8000"
     echo "📚 API 文档: http://localhost:8000/docs"
+    echo "☁️  已启用点云自动校准 (/cloud_registered_map)"
     echo ""
     echo "按 Ctrl+C 停止服务"
     
     # 等待中断信号
-    trap 'echo "🛑 停止服务..."; kill $BACKEND_PID $FRONTEND_PID; exit 0' INT
+    trap 'echo "🛑 停止服务..."; kill $BACKEND_PID $FRONTEND_PID $TRANSFORMER_PID; exit 0' INT
     wait
 }
 

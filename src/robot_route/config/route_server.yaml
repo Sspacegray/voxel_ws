@@ -1,0 +1,38 @@
+route_server:
+  ros__parameters:
+    use_sim_time: False
+    base_frame: "base_link"
+    route_frame: "map"
+    graph_file_loader: "GeoJsonGraphFileLoader"
+    graph_filepath: "/home/suja/voxel_ws/src/robot_route/maps/1126.geojson"
+    
+    # 路径生成参数
+    path_density: 0.05                        # 生成密集路径的点间距 (m)
+    enable_nn_search: true                    # 启用最近邻搜索
+    radius_to_achieve_node: 0.5               # 节点达成半径 (m)
+    boundary_radius_to_achieve_node: 0.3      # 边界节点达成半径 (m)
+
+    # Scorer plugins to calculate edge costs
+    edge_cost_functions: ["DistanceScorer"] #, "TimeScorer"]
+    DistanceScorer:
+      plugin: "nav2_route::DistanceScorer"
+      weight: 1.0
+
+    # TimeScorer:
+    #   plugin: "nav2_route::TimeScorer"
+    #   weight: 1.0
+
+    # Operations to perform on the route
+    operations: ["TimeMarker", "ReroutingService", "AdjustSpeedLimit"]
+    TimeMarker:
+      plugin: "nav2_route::TimeMarker"
+    ReroutingService:
+      plugin: "nav2_route::ReroutingService"
+    AdjustSpeedLimit:
+      plugin: "nav2_route::AdjustSpeedLimit"
+
+lifecycle_manager_route:
+  ros__parameters:
+    use_sim_time: False
+    autostart: True
+    node_names: ['route_server']

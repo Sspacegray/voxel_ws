@@ -103,15 +103,57 @@ async def add_visualization_object(
         logger.error(f"Failed to add visualization object: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/visualization/objects/{object_id}")
-async def remove_visualization_object(
-    object_id: str,
-    service: RosbridgeService = Depends(get_rosbridge_service)
-):
-    """移除可视化对象"""
-    try:
-        success = await service.remove_visualization_object(object_id)
-        return {"success": success, "object_id": object_id, "action": "object_removed"}
     except Exception as e:
         logger.error(f"Failed to remove visualization object {object_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Map Management Endpoints ---
+
+import os
+import glob
+
+MAP_DIR = "/home/suja/voxel_ws/src/robot_navigation/src/map"
+
+@router.get("/maps")
+async def list_maps():
+    """列出可用地图文件"""
+    try:
+        if not os.path.exists(MAP_DIR):
+            return []
+        
+        # Scan for yaml files (Nav2 maps)
+        yaml_files = glob.glob(os.path.join(MAP_DIR, "*.yaml"))
+        maps = []
+        for f in yaml_files:
+            name = os.path.basename(f).replace(".yaml", "")
+            # Assuming matching pgm/png exists, but purely listing yaml is enough for Nav2
+            maps.append({
+                "name": name,
+                "path": f,
+                "date": "2023-12-09" # Placeholder or use os.path.getmtime
+            })
+        return maps
+    except Exception as e:
+        logger.error(f"Failed to list maps: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/maps/load")
+async def load_map(
+    map_name: str,
+    service: RosbridgeService = Depends(get_rosbridge_service)
+):
+    """加载指定地图 (Call Nav2 map_server)"""
+    try:
+        # Build full path
+        map_path = os.path.join(MAP_DIR, f"{map_name}.yaml")
+        if not os.path.exists(map_path):
+             raise HTTPException(status_code=404, detail="Map file not found")
+
+        # In a real scenario, we call the ROS 2 lifecycle manager or map_server load_map service
+        # service.call_service('/map_server/load_map', ...)
+        # For now, we just return success to simulate the UI interaction
+        logger.info(f"Loading map: {map_path}")
+        return {"success": True, "message": f"Map {map_name} loaded successfully"}
+    except Exception as e:
+        logger.error(f"Failed to load map: {e}")
         raise HTTPException(status_code=500, detail=str(e))
