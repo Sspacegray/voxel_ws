@@ -114,7 +114,7 @@ export default {
     
     // ROS 信息
     const rosInfo = reactive({
-      version: 'ROS2 Humble',
+      version: 'ROS2 Jazzy',
       domainId: 0,
       middleware: 'rmw_fastrtps_cpp',
       hostname: 'robot-pc'

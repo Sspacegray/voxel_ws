@@ -19,7 +19,7 @@ private:
 };
 
 CLidarFilter::CLidarFilter(const rclcpp::NodeOptions& options) 
-    : Node("lidar_filter", options)
+    : Node("laser_filter", options)  // 修改节点名称匹配launch配置
 {
     // 从参数服务器获取参数
     this->declare_parameter<std::string>("source_topic", "/scan");
@@ -35,10 +35,14 @@ CLidarFilter::CLidarFilter(const rclcpp::NodeOptions& options)
     RCLCPP_INFO(this->get_logger(), "Publish topic: %s", pub_topic_name_.c_str());
     RCLCPP_INFO(this->get_logger(), "Outlier threshold: %f", outlier_threshold_);
 
-    scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>(pub_topic_name_, 10);
+    // 使用SensorDataQoS匹配/scan的发布者QoS (Best Effort, Volatile)
+    auto qos = rclcpp::SensorDataQoS();
+    scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>(pub_topic_name_, qos);
     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-        source_topic_name_, 10, 
+        source_topic_name_, qos, 
         std::bind(&CLidarFilter::lidarCallback, this, std::placeholders::_1));
+    
+    RCLCPP_INFO(this->get_logger(), "Laser filter ready!");
 }
 
 void CLidarFilter::lidarCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan)

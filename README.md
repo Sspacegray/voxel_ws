@@ -1,6 +1,6 @@
 # Voxel Robot Navigation System
 
-这是一个基于 ROS 2 (Humble) 的移动机器人自主导航与定位系统。本项目集成了 Livox Mid360 激光雷达、Fast-LIO 里程计、Nav2 导航栈以及相关的硬件驱动和感知算法，提供了一套完整的建图、定位和导航解决方案。
+这是一个基于 ROS 2 (Jazzy) 的移动机器人自主导航与定位系统（项目早期在 Humble 上开发）。本项目集成了 Livox Mid360 激光雷达、Fast-LIO 里程计、Nav2 导航栈以及相关的硬件驱动和感知算法，提供了一套完整的建图、定位和导航解决方案。
 
 ## 目录
 
@@ -194,6 +194,71 @@ ros2 launch imu_complementary_filter complementary_filter.launch.py
 | **octomap_server** | 保留 3D 信息、支持多层 | 内存占用大、更新慢 | 3D 避障、无人机 |
 | **3D Costmap (voxel_layer)** | 原生 3D 障碍检测 | 配置复杂、计算量大 | 高精度 3D 导航 |
 | **深度图投影** | 保留遮挡信息 | 需要深度相机 | RGB-D 导航 |
+
+---
+
+### 激光滤波器 (`laser_filter`)
+
+**位置**: `src/robot_base/src/laser_filter.cpp`
+
+**功能**: 过滤 `/scan` 中的离群点(杂点),减少代价地图中的噪声影响,提高导航路径稳定性。
+
+**原理**:
+- 使用邻域比较法判定离群点
+- 对每个激光点,检查其与前后邻居的距离差
+- 如果距离差超过阈值 (`outlier_threshold`),判定为离群点并标记为无效 (infinity)
+
+**关键参数** (在 `bringup.launch.py` 中配置):
+- `source_topic`: 输入激光扫描话题 (默认 `/scan`)
+- `pub_topic`: 输出过滤后的话题 (默认 `/scan_filtered`)
+- `outlier_threshold`: 离群点判定阈值 (默认 `0.1`m)
+  - 降低 (如 `0.05`) → 更激进过滤,可能过滤真实障碍
+  - 提高 (如 `0.15`) → 更保守过滤,可能遗漏杂点
+
+**数据流**:
+```
+pointcloud_to_laserscan → /scan → laser_filter → /scan_filtered → Nav2 costmap
+```
+
+**参数调优建议**:
+- 室内结构化环境: `0.08 - 0.12`m
+- 室外复杂环境: `0.05 - 0.10`m
+- 高动态场景: `0.15 - 0.20`m (减少过度过滤)
+
+**启动状态**: ✅ 已集成到 `robot_navigation/bringup.launch.py`
+
+---
+
+### 代价地图清除工具 (`clear_costmap_caller`)
+
+**位置**: `src/robot_perception/clear_costmap_caller/`
+
+**功能**: 定时清除全局和局部代价地图中的残留杂点,作为 `laser_filter` 的补充方案。
+
+**原理**:
+- 每隔固定时间间隔(默认1秒)调用Nav2的 `ClearEntireCostmap` 服务
+- 清除 `global_costmap` 和 `local_costmap` 中的所有障碍物标记
+
+**使用建议**:
+- **推荐策略**: 优先使用 `laser_filter`,仅在杂点仍严重时启用 `clear_costmap_caller`
+- **注意**: 频繁清除会短暂中断导航,影响路径连贯性
+
+**启动方式** (可选):
+```bash
+# 仅在 laser_filter 后仍有杂点问题时使用
+ros2 run clear_costmap_caller clear_costmap_caller
+```
+
+**同时使用 laser_filter 和 clear_costmap_caller**:
+可以同时使用,它们是互补的:
+- `laser_filter`: 预防性方案,从源头过滤(推荐)
+- `clear_costmap_caller`: 补救性方案,定期清除残留
+
+**两者对比**:
+| 工具 | 作用时机 | 优点 | 缺点 | 适用场景 |
+| :--- | :--- | :--- | :--- | :--- |
+| **laser_filter** | 数据输入时 | 预防、不影响导航 | 无法处理已有杂点 | 通用,推荐优先使用 |
+| **clear_costmap_caller** | 定期清除 | 清除已有杂点 | 短暂中断导航 | 严重杂点环境辅助 |
 
 ---
 
@@ -518,8 +583,8 @@ ros2 run rqt_graph rqt_graph
 
 ## 软件依赖
 
-- **OS**: Ubuntu 22.04 LTS
-- **ROS Distribution**: ROS 2 Humble Hawksbill
+- **OS**: Ubuntu 24.04 LTS
+- **ROS Distribution**: ROS 2 Jazzy Jalisco
 - **核心库**:
     - `pcl_ros`
     - `nav2-bringup`
@@ -551,7 +616,7 @@ ros2 run rqt_graph rqt_graph
 4. **配置环境变量**
    ```bash
    source install/setup.bash
-   # 建议添加到 ~/.bashrc
+   # 使用 zsh 时可改为：source install/setup.zsh 并写入 ~/.zshrc
    echo "source ~/voxel_ws/install/setup.bash" >> ~/.bashrc
    ```
 

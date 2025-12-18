@@ -1,0 +1,150 @@
+<!--
+  Arch(2): 路网 + First/Last-mile（Jazzy）
+
+  目标：
+  - 机器人不在路网时：先用 Nav2 自由空间规划/避障导航到“最近路网入口（route_start_pose）”
+  - 到达路网后：用 route_server 的 ComputeAndTrackRoute 输出 dense route path，严格沿路网 FollowPath
+  - 路网结束后：再用 Nav2 自由空间规划/避障导航到最终 goal pose（Last-mile）
+
+  设计取舍（KISS / SRP）：
+  - 不拼接路径（Jazzy 中没有 ConcatenatePaths/ArePosesNear 等旧节点），改为 3 段式串行执行，逻辑更直观、可调试。
+  - First/Last-mile 使用标准 PlannerServer+ControllerServer 闭环（自由避障）。
+  - Route-mile 使用 ComputeAndTrackRoute + FollowPath（路网严格追踪 + 允许 route operations）。
+-->
+
+<root BTCPP_format="4" main_tree_to_execute="NavigateOnRouteGraphArch2FirstLastMile">
+  <BehaviorTree ID="NavigateOnRouteGraphArch2FirstLastMile">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <Sequence name="Main">
+        <ControllerSelector selected_controller="{selected_controller}"
+                            default_controller="FollowPath"
+                            topic_name="controller_selector"/>
+        <PlannerSelector selected_planner="{selected_planner}"
+                         default_planner="GridBased"
+                         topic_name="planner_selector"/>
+
+        <!-- 0) 先用 ComputeRoute 找到“最近路网入口 pose”（route_start_pose） -->
+        <RecoveryNode number_of_retries="1" name="ComputeRouteEntry">
+          <ComputeRoute goal="{goal}"
+                        path="{route_entry_path}"
+                        route="{route}"
+                        use_poses="true"
+                        error_code_id="{compute_route_error_code}"/>
+          <Sequence>
+            <WouldAPlannerRecoveryHelp error_code="{compute_route_error_code}"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-ComputeRouteEntry"
+                                service_name="global_costmap/clear_entirely_global_costmap"/>
+          </Sequence>
+        </RecoveryNode>
+
+        <GetPoseFromPath path="{route_entry_path}" index="0" pose="{route_start_pose}"/>
+
+        <!-- 1) First-mile：自由空间导航到 route_start_pose（支持 1Hz 重规划） -->
+        <PipelineSequence name="FirstMile">
+          <RateController hz="1.0">
+            <RecoveryNode number_of_retries="1" name="ComputeFirstMilePath">
+              <ComputePathToPose goal="{route_start_pose}"
+                                path="{first_mile_path}"
+                                planner_id="{selected_planner}"
+                                error_code_id="{compute_path_error_code}"/>
+              <Sequence>
+                <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}"/>
+                <ClearEntireCostmap name="ClearGlobalCostmap-FirstMile"
+                                    service_name="global_costmap/clear_entirely_global_costmap"/>
+              </Sequence>
+            </RecoveryNode>
+          </RateController>
+          <RecoveryNode number_of_retries="1" name="FollowFirstMilePath">
+            <FollowPath path="{first_mile_path}"
+                        controller_id="{selected_controller}"
+                        error_code_id="{follow_path_error_code}"/>
+            <Sequence>
+              <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+              <ClearEntireCostmap name="ClearLocalCostmap-FirstMile"
+                                  service_name="local_costmap/clear_entirely_local_costmap"/>
+            </Sequence>
+          </RecoveryNode>
+        </PipelineSequence>
+
+        <!-- 2) Route-mile：ComputeAndTrackRoute + FollowPath（严格路网追踪） -->
+        <PipelineSequence name="RouteMile">
+          <RateController hz="0.5">
+            <RecoveryNode number_of_retries="1" name="ComputeAndTrackRoute">
+              <ComputeAndTrackRoute goal="{goal}"
+                                    path="{route_path}"
+                                    route="{route}"
+                                    use_poses="true"
+                                    error_code_id="{compute_route_error_code}"/>
+              <Sequence>
+                <WouldAPlannerRecoveryHelp error_code="{compute_route_error_code}"/>
+                <ClearEntireCostmap name="ClearGlobalCostmap-RouteMile"
+                                    service_name="global_costmap/clear_entirely_global_costmap"/>
+              </Sequence>
+            </RecoveryNode>
+          </RateController>
+          <RecoveryNode number_of_retries="1" name="FollowRoutePath">
+            <FollowPath path="{route_path}"
+                        controller_id="{selected_controller}"
+                        error_code_id="{follow_path_error_code}"/>
+            <Sequence>
+              <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+              <ClearEntireCostmap name="ClearLocalCostmap-RouteMile"
+                                  service_name="local_costmap/clear_entirely_local_costmap"/>
+            </Sequence>
+          </RecoveryNode>
+        </PipelineSequence>
+
+        <!-- 3) Last-mile：自由空间导航到最终 goal pose（支持 1Hz 重规划） -->
+        <PipelineSequence name="LastMile">
+          <RateController hz="1.0">
+            <RecoveryNode number_of_retries="1" name="ComputeLastMilePath">
+              <ComputePathToPose goal="{goal}"
+                                path="{last_mile_path}"
+                                planner_id="{selected_planner}"
+                                error_code_id="{compute_path_error_code}"/>
+              <Sequence>
+                <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}"/>
+                <ClearEntireCostmap name="ClearGlobalCostmap-LastMile"
+                                    service_name="global_costmap/clear_entirely_global_costmap"/>
+              </Sequence>
+            </RecoveryNode>
+          </RateController>
+          <RecoveryNode number_of_retries="1" name="FollowLastMilePath">
+            <FollowPath path="{last_mile_path}"
+                        controller_id="{selected_controller}"
+                        error_code_id="{follow_path_error_code}"/>
+            <Sequence>
+              <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+              <ClearEntireCostmap name="ClearLocalCostmap-LastMile"
+                                  service_name="local_costmap/clear_entirely_local_costmap"/>
+            </Sequence>
+          </RecoveryNode>
+        </PipelineSequence>
+      </Sequence>
+
+      <!-- 全局恢复：沿用 nav2 默认的清图/旋转/等待/后退组合 -->
+      <Sequence>
+        <Fallback>
+          <WouldAControllerRecoveryHelp error_code="{follow_path_error_code}"/>
+          <WouldAPlannerRecoveryHelp error_code="{compute_path_error_code}"/>
+          <WouldAPlannerRecoveryHelp error_code="{compute_route_error_code}"/>
+        </Fallback>
+        <ReactiveFallback name="RecoveryFallback">
+          <GoalUpdated/>
+          <RoundRobin name="RecoveryActions">
+            <Sequence name="ClearingActions">
+              <ClearEntireCostmap name="ClearLocalCostmap-Subtree"
+                                  service_name="local_costmap/clear_entirely_local_costmap"/>
+              <ClearEntireCostmap name="ClearGlobalCostmap-Subtree"
+                                  service_name="global_costmap/clear_entirely_global_costmap"/>
+            </Sequence>
+            <Spin spin_dist="1.57" error_code_id="{spin_error_code}"/>
+            <Wait wait_duration="5.0"/>
+            <BackUp backup_dist="0.30" backup_speed="0.15" error_code_id="{backup_code_id}"/>
+          </RoundRobin>
+        </ReactiveFallback>
+      </Sequence>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>
+

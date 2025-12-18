@@ -50,58 +50,9 @@ bt_navigator:
     odom_topic: /Odometry
     bt_loop_duration: 10
     default_server_timeout: 20
-    # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' use defaults:
-    # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
-    # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
-    # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
-    plugin_lib_names:
-      - nav2_compute_path_to_pose_action_bt_node
-      - nav2_compute_path_through_poses_action_bt_node
-      - nav2_smooth_path_action_bt_node
-      - nav2_follow_path_action_bt_node
-      - nav2_spin_action_bt_node
-      - nav2_wait_action_bt_node
-      - nav2_assisted_teleop_action_bt_node
-      - nav2_back_up_action_bt_node
-      - nav2_drive_on_heading_bt_node
-      - nav2_clear_costmap_service_bt_node
-      - nav2_is_stuck_condition_bt_node
-      - nav2_goal_reached_condition_bt_node
-      - nav2_goal_updated_condition_bt_node
-      - nav2_globally_updated_goal_condition_bt_node
-      - nav2_is_path_valid_condition_bt_node
-      - nav2_initial_pose_received_condition_bt_node
-      - nav2_reinitialize_global_localization_service_bt_node
-      - nav2_rate_controller_bt_node
-      - nav2_distance_controller_bt_node
-      - nav2_speed_controller_bt_node
-      - nav2_truncate_path_action_bt_node
-      - nav2_truncate_path_local_action_bt_node
-      - nav2_goal_updater_node_bt_node
-      - nav2_recovery_node_bt_node
-      - nav2_pipeline_sequence_bt_node
-      - nav2_round_robin_node_bt_node
-      - nav2_transform_available_condition_bt_node
-      - nav2_time_expired_condition_bt_node
-      - nav2_path_expiring_timer_condition
-      - nav2_distance_traveled_condition_bt_node
-      - nav2_single_trigger_bt_node
-      - nav2_goal_updated_controller_bt_node
-      - nav2_is_battery_low_condition_bt_node
-      - nav2_navigate_through_poses_action_bt_node
-      - nav2_navigate_to_pose_action_bt_node
-      - nav2_remove_passed_goals_action_bt_node
-      - nav2_planner_selector_bt_node
-      - nav2_controller_selector_bt_node
-      - nav2_goal_checker_selector_bt_node
-      - nav2_controller_cancel_bt_node
-      - nav2_path_longer_on_approach_bt_node
-      - nav2_wait_cancel_bt_node
-      - nav2_spin_cancel_bt_node
-      - nav2_back_up_cancel_bt_node
-      - nav2_assisted_teleop_cancel_bt_node
-      - nav2_drive_on_heading_cancel_bt_node
-      - nav2_is_battery_charging_condition_bt_node
+    # In Jazzy, standard Nav2 BT nodes are auto-loaded by default.
+    # Do NOT specify plugin_lib_names - just let Nav2 use its defaults.
+    # plugin_lib_names: []
 
 bt_navigator_navigate_through_poses_rclcpp_node:
   ros__parameters:
@@ -114,10 +65,11 @@ bt_navigator_navigate_to_pose_rclcpp_node:
 controller_server:
   ros__parameters:
     use_sim_time: False
-    controller_frequency: 20.0
-    min_x_velocity_threshold: 0.05
-    min_y_velocity_threshold: 0.05
-    min_theta_velocity_threshold: 0.1
+    controller_frequency: 50.0  # 与下位机50Hz对齐
+    enable_stamped_cmd_vel: true  # Jazzy: 输出TwistStamped
+    min_x_velocity_threshold: 0.01
+    min_y_velocity_threshold: 0.0
+    min_theta_velocity_threshold: 0.02
     failure_tolerance: 1.0 # The maximum duration in seconds the called controller plugin can fail
     odom_topic: "/Odometry"
     progress_checker_plugin: "progress_checker"
@@ -126,16 +78,27 @@ controller_server:
     # Progress checker parameters
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
-      movement_time_allowance: 3.0
+      required_movement_radius: 0.1
+      movement_time_allowance: 5.0
     # Goal checker parameters
     general_goal_checker:
       stateful: False
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.3
-      yaw_goal_tolerance: 3.14
-    FollowPath:    
-      plugin: "nav2_mppi_controller::MPPIController"
+      xy_goal_tolerance: 0.1  #position tolerance
+      yaw_goal_tolerance: 0.1  #direction tolerance
+    FollowPath:
+      plugin: "nav2_rotation_shim_controller::RotationShimController"
+      primary_controller: "nav2_mppi_controller::MPPIController"
+      forward_sampling_distance: 0.6
+      angular_dist_threshold: 0.35
+      angular_disengage_threshold: 0.15
+      rotate_to_heading_angular_vel: 0.8
+      max_angular_accel: 1.0
+      simulate_ahead_time: 1.0
+      rotate_to_goal_heading: false
+      rotate_to_heading_once: false
+      closed_loop: false
+      use_path_orientations: false
       #param 
       adjustThre: 14.0 # slopeDegree larger than this value will trigger the adjust heading behavior
       minAngleDiff: 365.0 # if the angle difference is larger than this value, the robot will continue to adjust heading
@@ -146,11 +109,11 @@ controller_server:
       batch_size: 1000 # Count of randomly sampled candidate trajectories from current optimal control sequence in a given iteration. 1000 @ 50 Hz or 2000 @ 30 Hz seems to produce good results.
       vx_std: 0.6
       vy_std: 0.0  # 差速机器人不支持横向移动
-      wz_std: 0.3
-      vx_max: 0.4  # 降低最大线速度
-      vx_min: 0.0  # 禁止倒车
+      wz_std: 0.5
+      vx_max: 0.6  # 提高到0.8m/s
+      vx_min: -0.2  # 允许倒退0.2m/s,方便转向
       vy_max: 0.0  # 差速机器人不支持横向移动
-      wz_max: 0.5  # 提高最大角速度
+      wz_max: 1.0  # 提高到1.0rad/s,让机器人能快速旋转
       iteration_count: 1 # Recommended to remain as 1 and instead prefer larger batch sizes.
       prune_distance: 4.0 # proportion to your maximum velocity and prediction horizon.
       transform_tolerance: 0.1 # Time tolerance for data transformations with TF (s).
@@ -188,13 +151,13 @@ controller_server:
         collision_cost: 40.0
         collision_margin_distance: 0.05 # 0.05 # Margin distance (m) from collision to apply severe penalty, similar to footprint inflation. Between 0.05-0.2 is reasonable. Note that it will highly influence the controller not to enter spaces more confined than this, so ensure this parameter is set lower than the narrowest you expect the robot to need to traverse through.
         near_goal_distance: 0.1 # if the robot is within this distance of the goal, it will not be repelled by obstacles.
-        inflation_radius: 0.6 # Radius to inflate costmap around lethal obstacles. This should be the same as for your inflation layer (Humble only)
+        inflation_radius: 0.8 # 与costmap inflation_radius保持一致
         cost_scaling_factor: 10.0 # Exponential decay factor across inflation radius. This should be the same as for your inflation layer (Humble only)
-        inflation_layer_name: ["local_inflation_layer","global_inflation_layer"] # 
+        inflation_layer_name: "local_inflation_layer" # 
       PathAlignCritic:
         enabled: true
         cost_power: 1
-        cost_weight: 20.0
+        cost_weight: 40.0  # 严格贴路网：提高对齐权重（目标偏离<=0.1m）
         max_path_occupancy_ratio: 0.001
         trajectory_point_step: 3 #?
         threshold_to_consider: 0.7 # 0.5 # Distance (m) between robot and goal to stop considering path alignment and allow goal critics to take over. So just keep it same as threshold_to_consider in GoalCritic.
@@ -206,7 +169,7 @@ controller_server:
       PathFollowCritic: #? incentivizes making progress along the path, what is the diff between this and PathAlignCritic?
         enabled: true
         cost_power: 1
-        cost_weight: 5.0
+        cost_weight: 30.0  # 严格贴路网：提高沿路径推进权重
         offset_from_furthest: 10 # Number of path points after furthest one any trajectory achieves to drive path tracking relative to.
         threshold_to_consider: 0.7 # That is to say, path following will be considered until the robot is within this distance of the goal, at which point the goal critic will take over.
       PathAngleCritic: # This critic penalizes trajectories at a high relative angle to the path. This helps the robot make sharp turns when necessary due to large accumulated angular errors.
@@ -270,7 +233,7 @@ local_costmap:
         # robot is non-circular for optimized first-order collision checking.
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
-        inflation_radius: 0.6
+        inflation_radius: 0.8  # 增大到0.8m,让路径远离障碍物
       local_obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"  # 使用标准插件
         enabled: True
@@ -279,8 +242,8 @@ local_costmap:
         min_obstacle_height: -0.5
         observation_sources: scan
         scan:
-          topic: /scan  # 来自pointcloud_to_laserscan
-          sensor_frame: livox_frame
+          topic: /scan_filtered  # 使用过滤后的scan,减少杂点
+          sensor_frame: base_link
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -352,7 +315,7 @@ global_costmap:
       global_inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 10.0
-        inflation_radius: 0.7
+        inflation_radius: 0.8  # 增大到0.8m,让Theta*路径远离边缘
       always_send_full_costmap: True
       global_obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
@@ -362,8 +325,8 @@ global_costmap:
         min_obstacle_height: -0.5
         observation_sources: scan
         scan:
-          topic: /scan
-          sensor_frame: livox_frame
+          topic: /scan_filtered  # 使用过滤后的scan,减少杂点
+          sensor_frame: base_link
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -379,7 +342,7 @@ map_server:
     use_sim_time: False
     # Overridden in launch by the "map" launch configuration or provided default value.
     # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
-    yaml_filename: "/home/suja/voxel_ws/src/robot_navigation/src/map/1126.yaml"
+    yaml_filename: ""  # overridden by launch argument `map`
 
 map_saver:
   ros__parameters:
@@ -422,7 +385,7 @@ planner_server:
       #   tolerance: 1.0e-10
 
       # ---- Theta* ---- 
-      plugin: "nav2_theta_star_planner/ThetaStarPlanner"
+      plugin: "nav2_theta_star_planner::ThetaStarPlanner"
       how_many_corners: 8
       w_euc_cost: 1.0
       w_traversal_cost: 2.0
@@ -515,28 +478,29 @@ smoother_server:
 
 behavior_server:
   ros__parameters:
+    enable_stamped_cmd_vel: true  # Jazzy: 输出TwistStamped
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
     behavior_plugins: ["spin", "backup", "drive_on_heading", "assisted_teleop", "wait"]
     spin:
-      plugin: "nav2_behaviors/Spin"
+      plugin: "nav2_behaviors::Spin"
     backup:
-      plugin: "nav2_behaviors/BackUp"
+      plugin: "nav2_behaviors::BackUp"
     drive_on_heading:
-      plugin: "nav2_behaviors/DriveOnHeading"
+      plugin: "nav2_behaviors::DriveOnHeading"
     wait:
-      plugin: "nav2_behaviors/Wait"
+      plugin: "nav2_behaviors::Wait"
     assisted_teleop:
-      plugin: "nav2_behaviors/AssistedTeleop"
+      plugin: "nav2_behaviors::AssistedTeleop"
     global_frame: map
     robot_base_frame: base_link
     transform_tolerance: 0.1
     use_sim_time: False
     simulate_ahead_time: 2.0
-    max_rotational_vel: 0.8
-    min_rotational_vel: 0.2
-    rotational_acc_lim: 0.5
+    max_rotational_vel: 1.2  # 提高旋转速度,快速转向背后目标
+    min_rotational_vel: 0.3  # 提高最小旋转速度
+    rotational_acc_lim: 1.0  # 提高旋转加速度
     # param for BackUpTwzFree
     robot_radius: 0.35
     max_radius: 3.5
@@ -562,13 +526,14 @@ waypoint_follower:
 velocity_smoother:
   ros__parameters:
     use_sim_time: False
-    smoothing_frequency: 80.0
+    smoothing_frequency: 50.0      # 与controller_frequency和下位机对齐50Hz
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.4, 0.0, 0.8]  # 降低最大线速度
+    enable_stamped_cmd_vel: true   # ✅ Jazzy必须为true,输出TwistStamped
+    max_velocity: [0.8, 0.0, 1.0]  # 降低最大线速度
     min_velocity: [0.0, 0.0, -0.5]  # 禁止倒车 (x=0.0)
-    max_accel: [0.4, 0.0, 0.5]  # 提高加速度
-    max_decel: [-0.4, 0.0, -0.5]  # 提高减速度
+    max_accel: [0.8, 0.0, 0.5]  # 提高加速度
+    max_decel: [-0.8, 0.0, -0.5]  # 提高减速度
     odom_topic: "/Odometry"
     odom_duration: 0.1
     deadband_velocity: [0.05, 0.05, 0.05]
@@ -589,30 +554,8 @@ lifecycle_manager_localization:
   ros__parameters:
     use_sim_time: False
     autostart: True
-    node_names: ['map_server', 'amcl']
+    node_names: ['map_server']
 
 # Route Server Configuration
-route_server:
-  ros__parameters:
-    use_sim_time: False
-    base_frame: "base_link"
-    route_frame: "map"
-    graph_file_loader: "GeoJsonGraphFileLoader"
-    graph_filepath: "/home/suja/voxel_ws/src/robot_route/maps/1126.geojson"
-
-    # Scorer plugins to calculate edge costs
-    edge_cost_functions: ["DistanceScorer"]
-    DistanceScorer:
-      plugin: "nav2_route::DistanceScorer"
-      weight: 1.0
-
-    # Operations to perform on the route
-    operations: ["TimeMarker"]
-    TimeMarker:
-      plugin: "nav2_route::TimeMarker"
-
-lifecycle_manager_route:
-  ros__parameters:
-    use_sim_time: False
-    autostart: True
-    node_names: ['route_server']
+# ⚠️ Route Server配置已移至 robot_route/config/route_server.yaml
+# route_demo.launch.py 会加载该配置文件，此处不再重复配置以避免冲突

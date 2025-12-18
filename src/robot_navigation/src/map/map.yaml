@@ -1,4 +1,4 @@
-image: /home/suja/voxel_ws/src/robot_navigation/src/map/map.pgm
+image: map.pgm
 mode: trinary
 resolution: 0.2
 origin: [-7.91, -9.22, 0]

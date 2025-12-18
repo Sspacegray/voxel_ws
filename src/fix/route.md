@@ -31,7 +31,7 @@
 
 ### 2.1 QGIS 方法（当前使用）
 
-详见：`/home/suja/voxel_ws/src/robot_route/doc/route_drew.md`
+详见：`src/robot_route/doc/route_drew.md`
 
 **流程概要：**
 1. 在 QGIS 中加载地图 (1126.pgm)
@@ -42,7 +42,7 @@
 
 **启动命令：**
 ```bash
-python3 /home/suja/voxel_ws/src/robot_route/maps/process_graph.py
+python3 src/robot_route/maps/process_graph.py
 ```
 
 ---
@@ -83,7 +83,7 @@ python3 /home/suja/voxel_ws/src/robot_route/maps/process_graph.py
 
 ### 3.1 Route Server 配置
 
-**配置文件**: `/home/suja/voxel_ws/src/robot_route/config/route_server.yaml`
+**配置文件**: `src/robot_route/config/route_server.yaml`
 
 ```yaml
 route_server:
@@ -92,7 +92,7 @@ route_server:
     base_frame: "base_link"
     route_frame: "map"
     graph_file_loader: "GeoJsonGraphFileLoader"
-    graph_filepath: "/home/suja/voxel_ws/src/robot_route/maps/1126.geojson"
+    graph_filepath: ""  # overridden by launch argument `graph`
 
     edge_cost_functions: ["DistanceScorer"]
     DistanceScorer:
@@ -106,7 +106,7 @@ route_server:
 
 ### 3.2 GeoJSON 路网文件
 
-**文件路径**: `/home/suja/voxel_ws/src/robot_route/maps/1126.geojson`
+**文件路径**: `src/robot_route/maps/1126.geojson`
 
 **结构说明：**
 - `Point` 类型 Feature = 路网节点
@@ -132,9 +132,9 @@ Nav2 官方 Demo 展示了机器人沿着预定义路网从节点 A 精确导航
 
 ```bash
 # 启动 Route Server（含 lifecycle manager）
-source /home/suja/voxel_ws/install/setup.bash
+source install/setup.bash
 ros2 launch robot_route route_demo.launch.py \
-  params_file:=/home/suja/voxel_ws/src/robot_route/config/route_server.yaml \
+  params_file:=src/robot_route/config/route_server.yaml \
   use_sim_time:=false
 
 # 检查 route_server 状态
@@ -148,7 +148,7 @@ ros2 lifecycle get /route_server
 
 创建一个 Python 脚本来执行路网导航：
 
-**文件路径**: `/home/suja/voxel_ws/src/robot_route/scripts/route_navigator.py`
+**文件路径**: `src/robot_route/scripts/route_navigator.py`
 
 ```python
 #!/usr/bin/env python3
@@ -252,10 +252,10 @@ if __name__ == '__main__':
 
 ```bash
 # 1. 给脚本执行权限
-chmod +x /home/suja/voxel_ws/src/robot_route/scripts/route_navigator.py
+chmod +x src/robot_route/scripts/route_navigator.py
 
 # 2. 运行导航
-python3 /home/suja/voxel_ws/src/robot_route/scripts/route_navigator.py
+python3 src/robot_route/scripts/route_navigator.py
 ```
 
 ---
@@ -359,7 +359,7 @@ def main():
     rclpy.init()
     navigator = RouteNavigator()
     
-    geojson_path = '/home/suja/voxel_ws/src/robot_route/maps/1126.geojson'
+    geojson_path = 'src/robot_route/maps/1126.geojson'
     node_sequence = [0, 1, 2, 3, 4, 5, 6]  # 按此顺序导航
     
     navigator.navigate_route(node_sequence, geojson_path)
@@ -468,4 +468,4 @@ ros2 service call /route_server/compute_route nav2_msgs/srv/ComputeRoute \
 
 - [Nav2 Route Server 文档](https://docs.nav2.org/configuration/packages/configuring-route-server.html)
 - [Nav2 Route Server Tools](https://docs.nav2.org/tutorials/docs/route_server_tools.html)
-- 路网绘制指南：`/home/suja/voxel_ws/src/robot_route/doc/route_drew.md`
+- 路网绘制指南：`src/robot_route/doc/route_drew.md`

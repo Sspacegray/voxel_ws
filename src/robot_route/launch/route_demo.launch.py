@@ -15,6 +15,10 @@ def generate_launch_description():
     # Create the launch configuration variables
     params_file = LaunchConfiguration('params_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
+    graph_filepath = LaunchConfiguration(
+        'graph',
+        default=os.path.join(robot_route_dir, 'maps', '1126.geojson')
+    )
 
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
@@ -25,6 +29,11 @@ def generate_launch_description():
         'use_sim_time',
         default_value='False',
         description='Use simulation (Gazebo) clock if true')
+
+    declare_graph_cmd = DeclareLaunchArgument(
+        'graph',
+        default_value=os.path.join(robot_route_dir, 'maps', '1126.geojson'),
+        description='Full path to the route graph geojson file')
 
     # Configure the route_server node
     param_substitutions = {
@@ -41,7 +50,7 @@ def generate_launch_description():
         executable='route_server',
         name='route_server',
         output='screen',
-        parameters=[configured_params])
+        parameters=[configured_params, {'graph_filepath': graph_filepath}])
 
     lifecycle_manager_node = Node(
         package='nav2_lifecycle_manager',
@@ -60,6 +69,7 @@ def generate_launch_description():
 
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_use_sim_time_cmd)
+    ld.add_action(declare_graph_cmd)
 
     ld.add_action(route_server_node)
     ld.add_action(lifecycle_manager_node)

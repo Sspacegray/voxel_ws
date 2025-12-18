@@ -23,9 +23,16 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+# Install Python scripts as executables
+install(PROGRAMS
+  scripts/twist_stamper.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_auto_package(INSTALL_TO_SHARE
     params
     launch
+    behavior_trees
     map
     rviz
   )

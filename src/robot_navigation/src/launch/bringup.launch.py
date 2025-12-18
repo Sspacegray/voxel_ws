@@ -95,10 +95,10 @@ def generate_launch_description():
         name='pointcloud_to_laserscan',
         output='screen',
         parameters=[{
-            'target_frame': 'livox_frame',
-            'transform_tolerance': 0.01,
-            'min_height': -0.2,
-            'max_height': 0.2,   #高度投影压缩值
+            'target_frame': 'camera_init',  # 使用 base_link，livox_frame 不存在
+            'transform_tolerance': 0.1,   # 增加容差
+            'min_height': -0.15,          # 相对 base_link(-0.15) = 相对地面(0.05m)，过滤地面
+            'max_height': 1.0,            # 相对 base_link(1.0) = 相对地面(1.2m)，检测障碍物
             'angle_min': -3.14159,
             'angle_max': 3.14159,
             'angle_increment': 0.0043,
@@ -124,16 +124,17 @@ def generate_launch_description():
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
-    # Static TF: body -> base_link (Fast-LIO Body Frame)
-    # Assumes Fast-LIO body frame aligns with robot base_link
-    # If Fast-LIO body is IMU, and IMU is at base_link, this is correct.
-    # If IMU is offset, this should be the inverse of base_link->imu_link, 
-    # BUT usually we treat Fast-LIO body as the base for navigation.
+    # Static TF: body -> base_footprint (Fast-LIO Body Frame -> URDF Root)
+    # Fast-LIO body is at LiDAR position: 
+    #   base_link_z_offset = 0.05 (ground_clearance) + 0.15 (vehicle_height/2) = 0.20m
+    #   lidar_z = 0.35m above base_link
+    #   Total LiDAR height = 0.20 + 0.35 = 0.55m
+    # We need to translate DOWN by 0.55m to get base_footprint at ground level
     static_tf_body_base = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_tf_body_base',
-        arguments=['0', '0', '0', '0', '0', '0', 'body', 'base_footprint'],
+        arguments=['0', '0', '-0.55', '0', '0', '0', 'body', 'base_footprint'],
         parameters=[{'use_sim_time': use_sim_time}]
     )
 
@@ -193,6 +194,19 @@ def generate_launch_description():
         fast_lio_node,
         linefit_node,
         pointcloud_to_laserscan_node,
+        
+        # Laser Filter: 过滤离群点,减少代价地图杂点
+        Node(
+            package='robot_base',
+            executable='laser_filter_node_exe',
+            name='laser_filter',
+            output='screen',
+            parameters=[{
+                'source_topic': '/scan',
+                'pub_topic': '/scan_filtered',
+                'outlier_threshold': 0.1
+            }]
+        ),
         static_tf_odom_camera,
         static_tf_body_base,
         

@@ -22,7 +22,7 @@
                 <!-- Compute a new route if a new goal is found or the path is no longer valid -->
                 <ReactiveSequence>
                   <Inverter>
-                    <GlobalUpdatedGoal/>
+                    <GoalUpdated/>
                   </Inverter>
                   <IsPathValid path="{path}"/> <!-- Base it on the complete connected 'path', not simply the 'route_path' -->
                 </ReactiveSequence>

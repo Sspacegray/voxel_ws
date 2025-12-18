@@ -27,7 +27,7 @@ set(OpenCV_STATIC ON)
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(GTSAM REQUIRED)
-find_package(Eigen 3.4.0 REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 include_directories(
   include/lio_sam
@@ -37,21 +37,32 @@ rosidl_generate_interfaces(${PROJECT_NAME} "msg/CloudInfo.msg" "srv/SaveMap.srv"
 
 add_executable(${PROJECT_NAME}_featureExtraction src/featureExtraction.cpp)
 ament_target_dependencies(${PROJECT_NAME}_featureExtraction rclcpp rclpy std_msgs sensor_msgs geometry_msgs nav_msgs pcl_msgs pcl_conversions visualization_msgs tf2 tf2_ros tf2_eigen tf2_sensor_msgs tf2_geometry_msgs OpenCV PCL)
-rosidl_target_interfaces(${PROJECT_NAME}_featureExtraction ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 add_executable(${PROJECT_NAME}_imageProjection src/imageProjection.cpp)
 ament_target_dependencies(${PROJECT_NAME}_imageProjection rclcpp rclpy std_msgs sensor_msgs geometry_msgs nav_msgs pcl_msgs pcl_conversions visualization_msgs pcl_msgs tf2 tf2_ros tf2_eigen tf2_sensor_msgs tf2_geometry_msgs OpenCV PCL)
-rosidl_target_interfaces(${PROJECT_NAME}_imageProjection ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 add_executable(${PROJECT_NAME}_imuPreintegration src/imuPreintegration.cpp)
-ament_target_dependencies(${PROJECT_NAME}_imuPreintegration rclcpp rclpy std_msgs sensor_msgs geometry_msgs nav_msgs pcl_msgs pcl_conversions visualization_msgs tf2 tf2_ros tf2_eigen tf2_sensor_msgs tf2_geometry_msgs OpenCV PCL GTSAM Eigen)
+ament_target_dependencies(${PROJECT_NAME}_imuPreintegration rclcpp rclpy std_msgs sensor_msgs geometry_msgs nav_msgs pcl_msgs pcl_conversions visualization_msgs tf2 tf2_ros tf2_eigen tf2_sensor_msgs tf2_geometry_msgs OpenCV PCL GTSAM Eigen3)
 target_link_libraries(${PROJECT_NAME}_imuPreintegration gtsam)
-rosidl_target_interfaces(${PROJECT_NAME}_imuPreintegration ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 add_executable(${PROJECT_NAME}_mapOptimization src/mapOptmization.cpp)
 ament_target_dependencies(${PROJECT_NAME}_mapOptimization rclcpp rclpy std_msgs sensor_msgs geometry_msgs nav_msgs pcl_msgs pcl_conversions visualization_msgs tf2 tf2_ros tf2_eigen tf2_sensor_msgs tf2_geometry_msgs OpenCV PCL GTSAM)
 target_link_libraries(${PROJECT_NAME}_mapOptimization gtsam)
-rosidl_target_interfaces(${PROJECT_NAME}_mapOptimization ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+list(APPEND EOL_LIST "foxy" "galactic" "eloquent" "dashing" "crystal")
+
+if($ENV{ROS_DISTRO} IN_LIST EOL_LIST)
+  rosidl_target_interfaces(${PROJECT_NAME}_featureExtraction ${PROJECT_NAME} "rosidl_typesupport_cpp")
+  rosidl_target_interfaces(${PROJECT_NAME}_imageProjection ${PROJECT_NAME} "rosidl_typesupport_cpp")
+  rosidl_target_interfaces(${PROJECT_NAME}_imuPreintegration ${PROJECT_NAME} "rosidl_typesupport_cpp")
+  rosidl_target_interfaces(${PROJECT_NAME}_mapOptimization ${PROJECT_NAME} "rosidl_typesupport_cpp")
+else()
+  rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+  target_link_libraries(${PROJECT_NAME}_featureExtraction ${cpp_typesupport_target})
+  target_link_libraries(${PROJECT_NAME}_imageProjection ${cpp_typesupport_target})
+  target_link_libraries(${PROJECT_NAME}_imuPreintegration ${cpp_typesupport_target})
+  target_link_libraries(${PROJECT_NAME}_mapOptimization ${cpp_typesupport_target})
+endif()
 
 install(
   DIRECTORY launch
@@ -102,4 +113,3 @@ if(BUILD_TESTING)
 endif()
 
 ament_package()
-

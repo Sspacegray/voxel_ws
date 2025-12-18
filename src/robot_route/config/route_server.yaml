@@ -4,13 +4,26 @@ route_server:
     base_frame: "base_link"
     route_frame: "map"
     graph_file_loader: "GeoJsonGraphFileLoader"
-    graph_filepath: "/home/suja/voxel_ws/src/robot_route/maps/1126.geojson"
+    graph_filepath: ""  # overridden by launch argument `graph`
     
     # 路径生成参数
     path_density: 0.05                        # 生成密集路径的点间距 (m)
+    max_iterations: 0                         # 最大搜索迭代,0=无限
+    max_planning_time: 2.0                    # 最大规划时间(s)
+    smooth_corners: false                     # ✅ 禁用平滑转角（严格路网）
+    smoothing_radius: 0.0                     # ✅ 平滑半径为0（严格路网）
+    costmap_topic: 'global_costmap/costmap_raw'  # costmap话题
+    
     enable_nn_search: true                    # 启用最近邻搜索
-    radius_to_achieve_node: 0.5               # 节点达成半径 (m)
-    boundary_radius_to_achieve_node: 0.3      # 边界节点达成半径 (m)
+    num_nearest_nodes: 5                      # 最近邻节点数量
+    max_nn_search_iterations: 10000           # 最大BFS搜索迭代
+    radius_to_achieve_node: 0.1               # 节点达成半径 (m) - 严格路网(<=0.1m)
+    boundary_radius_to_achieve_node: 0.1      # 边界节点达成半径 (m) - 严格路网(<=0.1m)
+    
+    # 追踪参数
+    tracker_update_rate: 50.0                 # 跟踪更新率(Hz)
+    max_prune_dist_from_edge: 0.3             # 边缘修剪最大距离（允许短暂绕行，但尽量不离开路网走廊）
+    prune_goal: true                          # 是否修剪目标节点
 
     # Scorer plugins to calculate edge costs
     edge_cost_functions: ["DistanceScorer"] #, "TimeScorer"]

@@ -1,8 +1,0 @@
-allan_node:
-  ros__parameters:
-     topic: /IMU_data  # /your/topic 
-     bag_path: /home/suja/allan_ws/src/allan_ros2/bag/rosbag2_2025_11_06-17_56_20/rosbag2_2025_11_06-17_56_20_0.db3
- # path/to/bag.db3
-     msg_type: ros # use 'ros' for sensor_msgs::msg::Imu, use 'px4' for px4_msgs::msg::VehicleImuStatus
-     publish_rate: 100 # your imu publish rate (hz) 
-     sample_rate: 100 # rate to sample data from bag. Higher sample rates take longer to compute 

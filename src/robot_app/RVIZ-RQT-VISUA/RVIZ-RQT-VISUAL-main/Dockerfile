@@ -11,19 +11,24 @@ RUN npm config set registry https://registry.npmmirror.com
 
 # 复制前端依赖文件
 COPY frontend/package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 
 # 复制前端源码并构建
 COPY frontend/ ./
 RUN npm run build
 
-# 阶段 2: 使用 ROS2 Humble + Ubuntu 22.04 作为基础镜像
-FROM ros:humble-perception-jammy
+# 阶段 2: 使用 ROS2 Jazzy + Ubuntu 24.04 作为基础镜像
+ARG ROS_DISTRO=jazzy
+ARG ROS_VARIANT=perception
+ARG UBUNTU_CODENAME=noble
+FROM ros:${ROS_DISTRO}-${ROS_VARIANT}-${UBUNTU_CODENAME}
+ARG ROS_DISTRO
+ARG UBUNTU_CODENAME
 
 # 配置apt镜像源加速（使用清华大学镜像）
-RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy main restricted universe multiverse" > /etc/apt/sources.list \
-    && echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-updates main restricted universe multiverse" >> /etc/apt/sources.list \
-    && echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ jammy-security main restricted universe multiverse" >> /etc/apt/sources.list
+RUN echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ ${UBUNTU_CODENAME} main restricted universe multiverse" > /etc/apt/sources.list \
+    && echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ ${UBUNTU_CODENAME}-updates main restricted universe multiverse" >> /etc/apt/sources.list \
+    && echo "deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ ${UBUNTU_CODENAME}-security main restricted universe multiverse" >> /etc/apt/sources.list
 
 # 安装必要的系统包
 RUN apt-get update && apt-get install -y \
@@ -85,7 +90,7 @@ RUN echo 'server { \
 
 # 创建启动脚本
 RUN echo '#!/bin/bash' > /app/start.sh && \
-    echo 'source /opt/ros/humble/setup.bash' >> /app/start.sh && \
+    echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /app/start.sh && \
     echo 'cd /app && python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &' >> /app/start.sh && \
     echo 'nginx -g "daemon off;" &' >> /app/start.sh && \
     echo 'sleep 5' >> /app/start.sh && \

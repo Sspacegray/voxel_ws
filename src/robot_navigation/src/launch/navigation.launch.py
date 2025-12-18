@@ -14,6 +14,7 @@ def generate_launch_description():
     # Directories
     robot_navigation_dir = get_package_share_directory('robot_navigation')
     nav2_bringup_dir = get_package_share_directory('nav2_bringup')
+    robot_route_dir = get_package_share_directory('robot_route')
 
     # Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default='false')
@@ -21,13 +22,26 @@ def generate_launch_description():
     localization_mode = LaunchConfiguration('localization_mode', default='icp')
     
     # 2D Map for Nav2 (Costmaps)
-    map_yaml_path = LaunchConfiguration('map', default='/home/suja/voxel_ws/src/robot_navigation/src/map/1126.yaml')
+    map_yaml_path = LaunchConfiguration(
+        'map',
+        default=os.path.join(robot_navigation_dir, 'map', '1126.yaml')
+    )
     
     # 3D Map for ICP (Localization)
     pcd_file_path = LaunchConfiguration('pcd_file', default='/home/suja/voxel_ws/test.pcd')
     
-    params_file = LaunchConfiguration('params_file', default=os.path.join(robot_navigation_dir, 'params', 'nav2_params.yaml'))
+    nav2_params_file = LaunchConfiguration('nav2_params_file', default=os.path.join(robot_navigation_dir, 'params', 'nav2_params.yaml'))
+    route_params_file = LaunchConfiguration(
+        'route_params_file',
+        default=os.path.join(robot_route_dir, 'config', 'route_server.yaml')
+    )
     autostart = LaunchConfiguration('autostart', default='true')
+    
+    # 启用标准自由空间导航行为树
+    nav_to_pose_bt_xml = LaunchConfiguration(
+        'nav_to_pose_bt_xml',
+        default='/opt/ros/jazzy/share/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml'
+    )
 
     # 1. Localization Launch (ICP or AMCL)
     # We disable RViz here because we launch it at the top level
@@ -38,21 +52,21 @@ def generate_launch_description():
         launch_arguments={
             'use_sim_time': use_sim_time,
             'pcd_file': pcd_file_path,
-            'use_rviz': 'false', # Disable RViz here as we launch it explicitly below
+            'use_rviz': 'false',  # Disable RViz here, use the one at the end of this file
             'localization_mode': localization_mode,
             'map': map_yaml_path,
-            'params_file': params_file,
+            'params_file': nav2_params_file,
             'autostart': autostart
         }.items()
     )
 
     # 1.1 Route Server Launch
-    route_launch_dir = os.path.join(get_package_share_directory('robot_route'), 'launch')
+    route_launch_dir = os.path.join(robot_route_dir, 'launch')
     route_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(route_launch_dir, 'route_demo.launch.py')),
         launch_arguments={
             'use_sim_time': use_sim_time,
-            'params_file': params_file
+            'params_file': route_params_file
         }.items()
     )
 
@@ -79,7 +93,7 @@ def generate_launch_description():
         executable='map_server',
         name='map_server',
         output='screen',
-        parameters=[params_file, {'yaml_filename': map_yaml_path}, {'use_sim_time': use_sim_time}]
+        parameters=[nav2_params_file, {'yaml_filename': map_yaml_path}, {'use_sim_time': use_sim_time}]
     )
 
     # Controller Server
@@ -88,7 +102,7 @@ def generate_launch_description():
         executable='controller_server',
         name='controller_server',
         output='screen',
-        parameters=[params_file, {'use_sim_time': use_sim_time}],
+        parameters=[nav2_params_file, {'use_sim_time': use_sim_time}],
         remappings=[('cmd_vel', 'cmd_vel_nav')]
     )
 
@@ -98,7 +112,7 @@ def generate_launch_description():
         executable='planner_server',
         name='planner_server',
         output='screen',
-        parameters=[params_file, {'use_sim_time': use_sim_time}]
+        parameters=[nav2_params_file, {'use_sim_time': use_sim_time}]
     )
 
     # Behavior Server
@@ -107,7 +121,8 @@ def generate_launch_description():
         executable='behavior_server',
         name='behavior_server',
         output='screen',
-        parameters=[params_file, {'use_sim_time': use_sim_time}]
+        parameters=[nav2_params_file, {'use_sim_time': use_sim_time}],
+        remappings=[('cmd_vel', 'cmd_vel_nav')]
     )
 
     # BT Navigator
@@ -116,7 +131,11 @@ def generate_launch_description():
         executable='bt_navigator',
         name='bt_navigator',
         output='screen',
-        parameters=[params_file, {'use_sim_time': use_sim_time}]
+        parameters=[
+            nav2_params_file,
+            {'use_sim_time': use_sim_time},
+            {'default_nav_to_pose_bt_xml': nav_to_pose_bt_xml},
+        ]
     )
 
     # Waypoint Follower
@@ -125,7 +144,7 @@ def generate_launch_description():
         executable='waypoint_follower',
         name='waypoint_follower',
         output='screen',
-        parameters=[params_file, {'use_sim_time': use_sim_time}]
+        parameters=[nav2_params_file, {'use_sim_time': use_sim_time}]
     )
 
     # Velocity Smoother
@@ -134,8 +153,12 @@ def generate_launch_description():
         executable='velocity_smoother',
         name='velocity_smoother',
         output='screen',
-        parameters=[params_file, {'use_sim_time': use_sim_time}],
-        remappings=[('cmd_vel', 'cmd_vel_nav'), ('cmd_vel_smoothed', '/diff_drive_controller/cmd_vel_unstamped')]
+        parameters=[nav2_params_file, {'use_sim_time': use_sim_time}],
+        # Jazzy: 输出TwistStamped到diff_drive_controller的~/cmd_vel话题
+        remappings=[
+            ('cmd_vel', 'cmd_vel_nav'),
+            ('cmd_vel_smoothed', '/diff_drive_controller/cmd_vel')
+        ]
     )
 
     # Smoother Server
@@ -144,7 +167,7 @@ def generate_launch_description():
         executable='smoother_server',
         name='smoother_server',
         output='screen',
-        parameters=[params_file, {'use_sim_time': use_sim_time}]
+        parameters=[nav2_params_file, {'use_sim_time': use_sim_time}]
     )
 
     # Lifecycle Manager for Localization (Map Server)
@@ -202,13 +225,19 @@ def generate_launch_description():
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('map', default_value=os.path.join(robot_navigation_dir, 'map', '1126.yaml'), description='Path to 2D Map YAML file for Nav2'),
         DeclareLaunchArgument('pcd_file', default_value='/home/suja/voxel_ws/test.pcd', description='Path to 3D PCD map file for ICP'),
-        DeclareLaunchArgument('params_file', default_value=os.path.join(robot_navigation_dir, 'params', 'nav2_params.yaml'), description='Nav2 parameters'),
+        DeclareLaunchArgument('nav2_params_file', default_value=os.path.join(robot_navigation_dir, 'params', 'nav2_params.yaml'), description='Nav2 parameters'),
+        DeclareLaunchArgument('route_params_file', default_value=os.path.join(robot_route_dir, 'config', 'route_server.yaml'), description='Route server parameters'),
         DeclareLaunchArgument('use_rviz', default_value='true', description='Whether to start RVIZ'),
         DeclareLaunchArgument('autostart', default_value='true', description='Automatically startup the nav2 stack'),
         DeclareLaunchArgument('localization_mode', default_value='icp', description='Localization mode: icp or amcl'),
+        DeclareLaunchArgument(
+            'nav_to_pose_bt_xml',
+            default_value='/opt/ros/jazzy/share/nav2_bt_navigator/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml',
+            description='BT XML used by NavigateToPose in bt_navigator'
+        ),
 
         localization_launch,
-        route_launch,
+        # route_launch,
         
         # Nav2 Nodes
         map_server_node,
@@ -223,8 +252,5 @@ def generate_launch_description():
         # Lifecycle Managers
         lifecycle_manager_localization_node,
         lifecycle_manager_navigation_node,
-        
-
-        
         rviz_node
     ])

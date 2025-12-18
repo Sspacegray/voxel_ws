@@ -8,6 +8,7 @@
 // #include <pcl_ros/point_cloud.h>
 #include <rclcpp/qos.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rcl_interfaces/msg/set_parameters_result.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -18,12 +19,16 @@ class SegmentationNode : public rclcpp::Node {
 public:
   SegmentationNode(const rclcpp::NodeOptions &node_options);
   void scanCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+  rcl_interfaces::msg::SetParametersResult
+  onParameterChange(const std::vector<rclcpp::Parameter> &parameters);
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr ground_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr obstacle_pub_;
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub_;
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr on_set_parameters_callback_handle_;
+  
   GroundSegmentationParams params_;
   std::shared_ptr<GroundSegmentation> segmenter_;
   std::string gravity_aligned_frame_;
@@ -66,7 +71,13 @@ SegmentationNode::SegmentationNode(const rclcpp::NodeOptions &node_options)
   if (this->get_parameter("max_fit_error", max_fit_error)) {
     params_.max_error_square = max_fit_error * max_fit_error;
   }
+  
   segmenter_ = std::make_shared<GroundSegmentation>(params_);
+  
+  // Register parameter callback
+  on_set_parameters_callback_handle_ = this->add_on_set_parameters_callback(
+      std::bind(&SegmentationNode::onParameterChange, this, std::placeholders::_1));
+
   std::string ground_topic, obstacle_topic, input_topic;
   ground_topic = this->declare_parameter("ground_output_topic", "ground_cloud");
   obstacle_topic =
@@ -82,6 +93,76 @@ SegmentationNode::SegmentationNode(const rclcpp::NodeOptions &node_options)
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
   RCLCPP_INFO(this->get_logger(), "Segmentation node initialized");
+}
+
+rcl_interfaces::msg::SetParametersResult
+SegmentationNode::onParameterChange(const std::vector<rclcpp::Parameter> &parameters) {
+  rcl_interfaces::msg::SetParametersResult result;
+  result.successful = true;
+  result.reason = "success";
+
+  bool reinit_segmenter = false;
+
+  for (const auto &param : parameters) {
+    const std::string name = param.get_name();
+    
+    if (name == "visualize") {
+      params_.visualize = param.as_bool();
+      reinit_segmenter = true;
+    } else if (name == "n_bins") {
+      params_.n_bins = param.as_int();
+      reinit_segmenter = true;
+    } else if (name == "n_segments") {
+      params_.n_segments = param.as_int();
+      reinit_segmenter = true;
+    } else if (name == "max_dist_to_line") {
+      params_.max_dist_to_line = param.as_double();
+      reinit_segmenter = true;
+    } else if (name == "max_slope") {
+      params_.max_slope = param.as_double();
+      reinit_segmenter = true;
+    } else if (name == "min_slope") {
+      params_.min_slope = param.as_double();
+      reinit_segmenter = true;
+    } else if (name == "long_threshold") {
+      params_.long_threshold = param.as_double();
+      reinit_segmenter = true;
+    } else if (name == "max_long_height") {
+      params_.max_long_height = param.as_double();
+      reinit_segmenter = true;
+    } else if (name == "max_start_height") {
+      params_.max_start_height = param.as_double();
+      reinit_segmenter = true;
+    } else if (name == "sensor_height") {
+      params_.sensor_height = param.as_double();
+      reinit_segmenter = true;
+    } else if (name == "line_search_angle") {
+      params_.line_search_angle = param.as_double();
+      reinit_segmenter = true;
+    } else if (name == "n_threads") {
+      params_.n_threads = param.as_int();
+      reinit_segmenter = true;
+    } else if (name == "r_min") {
+      double r_min = param.as_double();
+      params_.r_min_square = r_min * r_min;
+      reinit_segmenter = true;
+    } else if (name == "r_max") {
+      double r_max = param.as_double();
+      params_.r_max_square = r_max * r_max;
+      reinit_segmenter = true;
+    } else if (name == "max_fit_error") {
+      double max_fit_error = param.as_double();
+      params_.max_error_square = max_fit_error * max_fit_error;
+      reinit_segmenter = true;
+    }
+  }
+
+  if (reinit_segmenter) {
+    RCLCPP_INFO(this->get_logger(), "Parameter changed, re-initializing GroundSegmentation...");
+    segmenter_ = std::make_shared<GroundSegmentation>(params_);
+  }
+
+  return result;
 }
 
 void SegmentationNode::scanCallback(

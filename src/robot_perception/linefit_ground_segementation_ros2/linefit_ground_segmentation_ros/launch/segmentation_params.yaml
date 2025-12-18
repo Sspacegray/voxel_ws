@@ -4,7 +4,7 @@ ground_segmentation:
     n_threads: 6                # 处理线程数，建议设置为 CPU 核心数
 
     # ==================== 距离和分割参数 ====================
-    r_min: 0.4                  # 最小点距离（米）- 小于此距离的点被忽略
+    r_min: 0.6                  # 最小点距离（米）- 小于此距离的点被忽略
     r_max: 50.0                 # 最大点距离（米）- 超过此距离的点被忽略
     n_bins: 140                 # 径向分桶数量 - 影响距离分辨率
     n_segments: 360             # 角度分段数量 - 影响角度分辨率
@@ -15,19 +15,18 @@ ground_segmentation:
     # - 对于45度倾斜LiDAR：由于视角倾斜，地面点分布更分散，需要增大此值
     # - 调优：太小会把地面当障碍物，太大会把障碍物当地面
     # - 建议范围：0.20 - 0.35
-    max_dist_to_line: 0.25
+    max_dist_to_line: 0.40  # 增大容差以更好地过滤地面
 
     # 【关键参数】传感器离地高度（米）
-    # - 含义：LiDAR 距离地面的垂直高度
-    # - 当前值：0.30m（base_link 到地面的高度）
-    # - 注意：对于倾斜安装，这是垂直投影高度
-    sensor_height: 0.30
+    # - 计算：base_link_z_offset (0.20m) + lidar_z (0.35m) = 0.55m
+    # - 注意：对于 tilt_compensator 摆平后的数据，这是垂直投影高度
+    sensor_height: 0.55
 
     # 【关键参数】地面直线的最小斜率
     # - 含义：地面拟合直线的最小倾角
     # - 对于45度倾斜LiDAR：允许负斜率以适应倾斜视角
     # - 原因：倾斜LiDAR看到的地面可能呈现负斜率
-    min_slope: -0.1
+    min_slope: -0.5  # 允许更大的负斜率
 
     # 【关键参数】地面直线的最大斜率  
     # - 含义：地面拟合直线的最大倾角
@@ -56,7 +55,7 @@ ground_segmentation:
     # 最大起始高度差（米）
     # - 含义：新地面线段起点与估计地面高度的最大差异
     # - 对于倾斜LiDAR：显著增大以容忍倾斜视角
-    max_start_height: 0.3
+    max_start_height: 0.5  # 增大以适应 Fast-LIO 输出
 
     # 地面线搜索角度（弧度）
     # - 含义：在角度方向搜索地面线的范围
@@ -70,14 +69,14 @@ ground_segmentation:
     # - 留空：使用传感器自身坐标系（livox_frame）
     # - 可选值："base_link" 如果希望在底盘坐标系中处理
     # - 注意：由于 URDF 中已定义 livox_frame 的倾斜角度，此处留空即可
-    gravity_aligned_frame: ""
+    gravity_aligned_frame: ""  # 使用点云原始坐标系(body)进行分割
 
     # ==================== 输出参数 ====================
     latch: false                # 是否锁存输出话题（通常设为 false）
     visualize: false            # 是否可视化分割结果（仅用于调试，会降低性能）
 
     # 话题名称
-    input_topic: "livox/lidar/pointcloud"       # 输入点云话题
+    input_topic: "/livox/lidar/pointcloud"       # 输入点云话题
     obstacle_output_topic: "segmentation/obstacle"  # 障碍物点云输出话题
     ground_output_topic: "segmentation/ground"      # 地面点云输出话题
 

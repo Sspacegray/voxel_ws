@@ -55,7 +55,7 @@ def generate_launch_description():
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
             PathJoinSubstitution(
-                [FindPackageShare("robot_base"), "urdf", "four_diff.xacro"]
+                [FindPackageShare("robot_base"), "urdf", "robotcar.xacro"]
             ),
         ]
     )
@@ -104,7 +104,7 @@ def generate_launch_description():
                 package="controller_manager",
                 executable="spawner",
                 arguments=["diff_drive_controller", "--controller-manager", "controller_manager"],
-                name="robot_controller_spawner",  # 添加名称
+                name="robot_controller_spawner",
             ),
 
             # Node(
@@ -152,13 +152,15 @@ def generate_launch_description():
                 ]
             ),
 
-            # Tilt Compensator Node (C++)
+            # Tilt Compensator Node (C++) - 只处理 CustomMsg
             Node(
                 package='robot_base',
                 executable='tilt_compensator',
                 name='tilt_compensator',
                 output='screen',
-                parameters=[{'pitch_deg': 45.0}]
+                parameters=[
+                    {'pitch_deg': 45.0}  # 正值：将向下倾斜的点云"抬起"
+                ]
             ),
     ]
 

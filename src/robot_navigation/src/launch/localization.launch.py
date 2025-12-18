@@ -21,7 +21,7 @@ def generate_launch_description():
     use_rviz = LaunchConfiguration('use_rviz', default='true')
     localization_mode = LaunchConfiguration('localization_mode', default='icp')
     map_yaml_file = LaunchConfiguration('map', default='')
-    params_file = LaunchConfiguration('params_file', default='')
+    nav2_params_file = LaunchConfiguration('params_file', default='')
     autostart = LaunchConfiguration('autostart', default='true')
 
     # 1. Bringup (Base + Fast-LIO + Linefit + Point2Scan)
@@ -33,7 +33,7 @@ def generate_launch_description():
             'use_sim_time': use_sim_time,
             'localization_mode': localization_mode,
             'map': map_yaml_file,
-            'params_file': params_file,
+            'params_file': nav2_params_file,
             'autostart': autostart
         }.items()
     )
@@ -68,7 +68,7 @@ def generate_launch_description():
         DeclareLaunchArgument('use_sim_time', default_value='false'),
         DeclareLaunchArgument('pcd_file', default_value='/home/suja/voxel_ws/test.pcd', description='Path to PCD map file for ICP'),
         DeclareLaunchArgument('use_rviz', default_value='true', description='Whether to start RVIZ'),
-        DeclareLaunchArgument('localization_mode', default_value='amcl', description='Localization mode: icp or amcl'),
+        DeclareLaunchArgument('localization_mode', default_value='icp', description='Localization mode: icp or amcl'),
         DeclareLaunchArgument('map', default_value=os.path.join(robot_navigation_dir, 'map', '1126.yaml'), description='Path to map yaml for AMCL'),
         DeclareLaunchArgument('params_file', default_value=os.path.join(robot_navigation_dir, 'params', 'nav2_params.yaml'), description='Nav2 parameters file'),
         DeclareLaunchArgument('autostart', default_value='true', description='Autostart Nav2 nodes'),

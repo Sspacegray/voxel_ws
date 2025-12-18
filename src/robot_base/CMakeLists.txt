@@ -75,7 +75,7 @@ target_link_libraries(robotcar_hardware_interface ${cpp_typesupport_target})
 # Export plugin for ros2_control
 pluginlib_export_plugin_description_file(hardware_interface src/robotcar_hardware.xml)
 
-# Build Tilt Compensator
+# Build Tilt Compensator (CustomMsg only)
 add_executable(tilt_compensator src/tilt_compensator.cpp)
 target_include_directories(tilt_compensator PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

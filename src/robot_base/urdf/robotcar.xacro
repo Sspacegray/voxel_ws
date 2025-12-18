@@ -39,9 +39,9 @@
   <!-- z = height/2 = 0.15 -->
   <xacro:property name="lidar_x" value="0.34"/>
   <xacro:property name="lidar_y" value="0.0"/>
-  <xacro:property name="lidar_z" value="0.15"/>
-  <!-- 雷达绕Y轴向下旋转45度 -->
-  <xacro:property name="lidar_pitch" value="0.785398"/>
+  <xacro:property name="lidar_z" value="0.35"/>
+  <!-- 雷达绕Y轴向下旋转45度 - 数据已被 tilt_compensator 摆平，TF 中设为 0 -->
+  <xacro:property name="lidar_pitch" value="0.0"/>
 
   <!-- ======================== 宏定义 ======================== -->
   <xacro:macro name="wheel_link" params="name parent_link x_offset y_offset z_offset">
@@ -175,7 +175,8 @@
   <joint name="livox_joint" type="fixed">
     <parent link="base_link"/>
     <child link="livox_frame"/>
-    <origin xyz="${lidar_x} ${lidar_y} ${lidar_z}" rpy="0 ${lidar_pitch} 0"/>
+    <!-- Roll=+0.052 (约+3度) 补偿左边向下倾斜,抬起左边 -->
+    <origin xyz="${lidar_x} ${lidar_y} ${lidar_z}" rpy="-0.032 ${lidar_pitch} 0"/>
   </joint>
 
   <!-- IMU: 机体中心 -->

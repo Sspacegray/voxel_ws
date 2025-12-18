@@ -16,14 +16,15 @@
 
   diff_drive_controller:
     ros__parameters:
-      left_wheel_names: ["front_left_wheel_joint", "rear_left_wheel_joint"]
-      right_wheel_names: ["front_right_wheel_joint", "rear_right_wheel_joint"]
+      left_wheel_names: ["left_wheel_joint"]
+      right_wheel_names: ["right_wheel_joint"]
       wheel_separation: 0.26  # 左右轮距离 26cm
       wheel_radius: 0.08      # 轮子半径 8cm
       publish_rate: 20.0      
       odom_frame_id: odom
       base_frame_id: base_footprint
-      use_stamped_vel: false  # false: 订阅 /cmd_vel_unstamped (Twist)，配合标定脚本改为发布到/cmd_vel_unstamped
+      # Jazzy中,diff_drive_controller只接受TwistStamped,订阅~/cmd_vel话题
+      # use_stamped_vel参数已废弃,不再需要配置
       enable_odom_tf: false    # 标定odom时需要由diff_drive_controller发布 odom→base_footprint TF，方便脚本通过TF读取位姿
 
       # Odometry settings
@@ -38,7 +39,7 @@
       linear:
         x:
           has_velocity_limits: true
-          max_velocity: 0.5
+          max_velocity: 0.6
           has_acceleration_limits: true
           max_acceleration: 0.8
       angular:
@@ -46,7 +47,7 @@
           has_velocity_limits: true
           max_velocity: 1.0
           has_acceleration_limits: true
-          max_acceleration: 0.5
+          max_acceleration: 0.6
 
   joint_state_broadcaster:
     ros__parameters:

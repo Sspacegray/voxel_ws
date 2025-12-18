@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-# coding=utf8
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # calculate relative error for odometry
 
 import numpy as np

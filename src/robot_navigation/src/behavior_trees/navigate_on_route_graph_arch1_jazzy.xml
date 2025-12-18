@@ -1,0 +1,51 @@
+<!--
+  Arch(1): 严格路网追踪（Jazzy）
+  - 使用 route_server 的 ComputeAndTrackRoute 生成 dense path
+  - FollowPath 严格追踪路网，不引入自由空间全局规划（不做 first/last-mile）
+  - 适合“必须贴路网走”的场景，保持流程最小化（KISS）
+-->
+
+<root BTCPP_format="4" main_tree_to_execute="NavigateOnRouteGraphArch1">
+  <BehaviorTree ID="NavigateOnRouteGraphArch1">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithReplanning">
+        <ControllerSelector selected_controller="{selected_controller}"
+                            default_controller="FollowPath"
+                            topic_name="controller_selector"/>
+
+        <RecoveryNode number_of_retries="1" name="ComputeRoute">
+          <RateController hz="0.5">
+            <Fallback>
+              <ReactiveSequence>
+                <Inverter><GoalUpdated/></Inverter>
+                <IsPathValid path="{path}"/>
+              </ReactiveSequence>
+
+              <ComputeAndTrackRoute goal="{goal}"
+                                    path="{path}"
+                                    route="{route}"
+                                    use_poses="true"
+                                    error_code_id="{compute_route_error_code}"/>
+            </Fallback>
+          </RateController>
+          <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+        </RecoveryNode>
+
+        <RecoveryNode number_of_retries="1" name="FollowPath">
+          <FollowPath path="{path}" controller_id="{selected_controller}"
+                      error_code_id="{follow_path_error_code}"/>
+          <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
+        </RecoveryNode>
+      </PipelineSequence>
+
+      <RoundRobin name="RecoveryActions">
+        <Sequence>
+          <ClearEntireCostmap service_name="local_costmap/clear_entirely_local_costmap"/>
+          <ClearEntireCostmap service_name="global_costmap/clear_entirely_global_costmap"/>
+        </Sequence>
+        <Wait wait_duration="5.0"/>
+        <BackUp backup_dist="0.30" backup_speed="0.15"/>
+      </RoundRobin>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>
