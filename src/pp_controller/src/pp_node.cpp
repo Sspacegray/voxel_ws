@@ -27,7 +27,16 @@ PPNode::PPNode(const rclcpp::NodeOptions& options)
     , current_yaw_(0.0)
     , current_vel_(0.0)
     , pose_valid_(false)
+    , last_pose_time_(0, 0, this->get_clock()->get_clock_type())
 {
+    // === 位姿源参数 ===
+    this->declare_parameter("pose_source", std::string("tf"));           // tf | odom_topic
+    this->declare_parameter("pose_topic", std::string("/Odometry"));     // nav_msgs/Odometry, in map frame
+    this->declare_parameter("pose_timeout", 0.5);                        // seconds
+    this->declare_parameter("global_frame", std::string("map"));
+    this->declare_parameter("base_frame", std::string("base_link"));
+    this->declare_parameter("cmd_vel_topic", std::string("/cmd_vel"));
+
     // === 核心参数 ===
     this->declare_parameter("max_linear_vel", 0.5);
     this->declare_parameter("min_linear_vel", 0.05);
@@ -58,6 +67,13 @@ PPNode::PPNode(const rclcpp::NodeOptions& options)
     this->declare_parameter("use_costmap", true);
 
     // 获取参数
+    pose_source_ = this->get_parameter("pose_source").as_string();
+    pose_topic_ = this->get_parameter("pose_topic").as_string();
+    pose_timeout_ = this->get_parameter("pose_timeout").as_double();
+    global_frame_ = this->get_parameter("global_frame").as_string();
+    base_frame_ = this->get_parameter("base_frame").as_string();
+    cmd_vel_topic_ = this->get_parameter("cmd_vel_topic").as_string();
+
     max_linear_vel_ = this->get_parameter("max_linear_vel").as_double();
     min_linear_vel_ = this->get_parameter("min_linear_vel").as_double();
     max_angular_vel_ = this->get_parameter("max_angular_vel").as_double();
@@ -100,6 +116,18 @@ PPNode::PPNode(const rclcpp::NodeOptions& options)
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
+    // 位姿订阅（map 系 Odometry）
+    if (pose_source_ == "odom_topic") {
+        pose_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            pose_topic_, rclcpp::QoS(10),
+            std::bind(&PPNode::poseCallback, this, _1));
+        RCLCPP_INFO(this->get_logger(), "Pose source: odom_topic=%s (expect frame_id=%s)",
+                    pose_topic_.c_str(), global_frame_.c_str());
+    } else {
+        RCLCPP_INFO(this->get_logger(), "Pose source: TF %s->%s",
+                    global_frame_.c_str(), base_frame_.c_str());
+    }
+
     // 订阅激光雷达
     laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
         laser_topic_, rclcpp::SensorDataQoS(),
@@ -113,7 +141,7 @@ PPNode::PPNode(const rclcpp::NodeOptions& options)
     }
 
     // 发布话题
-    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+    cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(cmd_vel_topic_, 10);
     state_pub_ = this->create_publisher<std_msgs::msg::String>("/pp/state", 10);
     progress_pub_ = this->create_publisher<std_msgs::msg::Float32>("/pp/progress", 10);
     obstacle_pub_ = this->create_publisher<std_msgs::msg::Bool>("/pp/obstacle", 10);
@@ -158,21 +186,72 @@ PPNode::PPNode(const rclcpp::NodeOptions& options)
     }
 }
 
-bool PPNode::updatePoseFromTF()
+void PPNode::poseCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
+    if (!msg) {
+        return;
+    }
+
+    if (!msg->header.frame_id.empty() && msg->header.frame_id != global_frame_) {
+        RCLCPP_WARN_THROTTLE(
+            this->get_logger(), *this->get_clock(), 2000,
+            "Pose topic frame_id=%s, expected=%s (ignore)",
+            msg->header.frame_id.c_str(), global_frame_.c_str());
+        return;
+    }
+
+    tf2::Quaternion q(
+        msg->pose.pose.orientation.x,
+        msg->pose.pose.orientation.y,
+        msg->pose.pose.orientation.z,
+        msg->pose.pose.orientation.w);
+    const double yaw = tf2::getYaw(q);
+
+    std::lock_guard<std::mutex> lock(pose_mutex_);
+    current_x_ = msg->pose.pose.position.x;
+    current_y_ = msg->pose.pose.position.y;
+    current_yaw_ = yaw;
+    current_vel_ = msg->twist.twist.linear.x;
+    last_pose_time_ = rclcpp::Time(msg->header.stamp, this->get_clock()->get_clock_type());
+    pose_valid_ = true;
+}
+
+bool PPNode::updatePose()
+{
+    if (pose_source_ == "odom_topic") {
+        std::lock_guard<std::mutex> lock(pose_mutex_);
+        if (!pose_valid_) {
+            RCLCPP_WARN_THROTTLE(
+                this->get_logger(), *this->get_clock(), 2000,
+                "Waiting for pose topic: %s", pose_topic_.c_str());
+            return false;
+        }
+        const auto now = this->get_clock()->now();
+        const double age = (now - last_pose_time_).seconds();
+        if (pose_timeout_ > 0.0 && age > pose_timeout_) {
+            RCLCPP_WARN_THROTTLE(
+                this->get_logger(), *this->get_clock(), 2000,
+                "Pose timeout: %.3fs > %.3fs (topic=%s)",
+                age, pose_timeout_, pose_topic_.c_str());
+            return false;
+        }
+        return true;
+    }
+
+    // TF mode
     try {
-        auto tf = tf_buffer_->lookupTransform("map", "base_link", tf2::TimePointZero);
-        
+        auto tf = tf_buffer_->lookupTransform(global_frame_, base_frame_, tf2::TimePointZero);
+
         current_x_ = tf.transform.translation.x;
         current_y_ = tf.transform.translation.y;
-        
+
         tf2::Quaternion q(
             tf.transform.rotation.x,
             tf.transform.rotation.y,
             tf.transform.rotation.z,
             tf.transform.rotation.w);
         current_yaw_ = tf2::getYaw(q);
-        
+
         pose_valid_ = true;
         return true;
     } catch (const tf2::TransformException& ex) {
@@ -180,7 +259,8 @@ bool PPNode::updatePoseFromTF()
             this->get_logger(),
             *this->get_clock(),
             5000,
-            "Failed to get map->base_link transform: %s", ex.what());
+            "Failed to get %s->%s transform: %s",
+            global_frame_.c_str(), base_frame_.c_str(), ex.what());
         pose_valid_ = false;
         return false;
     }
@@ -314,8 +394,8 @@ void PPNode::controlLoop()
     publishObstacleStatus();
     publishDiagnostics();
 
-    // 更新位姿（从 TF）
-    if (!updatePoseFromTF()) {
+    // 更新位姿（TF 或 map 系 Odometry topic）
+    if (!updatePose()) {
         return;
     }
 

@@ -46,11 +46,12 @@ public:
 private:
     // 回调函数
     void controlLoop();
+    void poseCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
     void laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
     void costmapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     
     // TF 位姿更新
-    bool updatePoseFromTF();
+    bool updatePose();
     
     // Costmap 代价查询
     double getCostFactor(double x, double y);
@@ -83,6 +84,12 @@ private:
     void publishDiagnostics();
 
     // 核心参数
+    std::string pose_source_;            // "tf" | "odom_topic"
+    std::string pose_topic_;             // nav_msgs/Odometry, expected in global_frame_
+    double pose_timeout_;                // seconds
+    std::string global_frame_;           // for TF + pose validation
+    std::string base_frame_;             // for TF
+    std::string cmd_vel_topic_;          // output cmd topic
     double max_linear_vel_;
     double min_linear_vel_;
     double max_angular_vel_;
@@ -136,6 +143,8 @@ private:
     double current_yaw_;
     double current_vel_;  // 当前速度 (用于自适应前瞻)
     bool pose_valid_;
+    rclcpp::Time last_pose_time_;
+    std::mutex pose_mutex_;
 
     // 控制器
     std::unique_ptr<SpinController> spin_controller_;
@@ -146,6 +155,7 @@ private:
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
     // ROS 接口
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr pose_sub_;
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_sub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;

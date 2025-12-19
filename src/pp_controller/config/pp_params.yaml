@@ -2,6 +2,17 @@
 
 pp_controller:
   ros__parameters:
+    # === 位姿源（map系）===
+    # pose_source:
+    #   - "tf"        : 使用 TF (global_frame->base_frame)
+    #   - "odom_topic": 订阅 nav_msgs/Odometry，且 header.frame_id 必须是 global_frame
+    pose_source: "odom_topic"
+    pose_topic: "/Odometry"
+    pose_timeout: 0.5
+    global_frame: "map"
+    base_frame: "base_link"
+    cmd_vel_topic: "/cmd_vel"
+
     # === 速度限制 ===
     max_linear_vel: 0.5       # 最大线速度 (m/s)
     min_linear_vel: 0.05      # 最小线速度 (m/s)
