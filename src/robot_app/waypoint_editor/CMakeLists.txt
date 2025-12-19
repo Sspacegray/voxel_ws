@@ -40,6 +40,7 @@ add_library(${PROJECT_NAME} SHARED
   src/core/waypoint_sequence.cpp
   src/io/waypoint_csv.cpp
   src/io/waypoint_yaml.cpp
+  src/io/waypoint_json.cpp
   src/rviz/waypoint_editor_tool.cpp
   src/rviz/waypoint_editor_panel.cpp
   ${waypoint_editor_moc}

@@ -27,6 +27,7 @@
 
 #include "waypoint_editor/io/waypoint_csv.hpp"
 #include "waypoint_editor/io/waypoint_yaml.hpp"
+#include "waypoint_editor/io/waypoint_json.hpp"
 #include "waypoint_editor/rviz/waypoint_editor_tool.hpp"
 
 using namespace std::placeholders;
@@ -629,7 +630,7 @@ bool WaypointEditorTool::requestFilePathForSaving(std::string &path, bool &save_
         nullptr,
         tr("Save Waypoints As"),
         "",
-        tr("CSV Files (*.csv);;YAML Files (*.yaml)"),
+        tr("JSON Path (*.txt *.json);;CSV Files (*.csv);;YAML Files (*.yaml)"),
         &selected_filter
     );
 
@@ -642,9 +643,15 @@ bool WaypointEditorTool::requestFilePathForSaving(std::string &path, bool &save_
         save_as_yaml = true;
     } else if (lower.endsWith(".csv")) {
         save_as_yaml = false;
+    } else if (lower.endsWith(".txt") || lower.endsWith(".json")) {
+        // JSON 格式会在 handleSaveWaypoints 中单独处理
+        save_as_yaml = false;
     } else {
         // Fallback to selected filter when no extension given.
-        if (selected_filter.contains("yaml", Qt::CaseInsensitive)) {
+        if (selected_filter.contains("JSON", Qt::CaseInsensitive)) {
+            qpath += ".txt";
+            save_as_yaml = false;
+        } else if (selected_filter.contains("yaml", Qt::CaseInsensitive)) {
             qpath += ".yaml";
             save_as_yaml = true;
         } else {
@@ -696,14 +703,28 @@ void WaypointEditorTool::handleSaveWaypoints(const std::shared_ptr<std_srvs::srv
 
     std::string error;
     bool ok = false;
-    if (save_as_yaml) {
+    
+    // 检查是否为 JSON/TXT 格式（用于 PP Controller）
+    auto lower_path = path;
+    std::transform(lower_path.begin(), lower_path.end(), lower_path.begin(), ::tolower);
+    
+    // C++17 兼容的后缀检查
+    auto endsWith = [](const std::string& str, const std::string& suffix) {
+        if (suffix.size() > str.size()) return false;
+        return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+    };
+    
+    if (endsWith(lower_path, ".txt") || endsWith(lower_path, ".json")) {
+        // 保存为 JSON 路径格式（PP Controller 格式）
+        ok = io::WaypointJson::Save(waypoint_sequence_.waypoints(), path, error);
+    } else if (save_as_yaml) {
         ok = io::WaypointYaml::Save(waypoint_sequence_.waypoints(), path, error);
     } else {
         ok = io::WaypointCsv::Save(waypoint_sequence_.waypoints(), path, error);
     }
 
     if (!ok) {
-        QMessageBox::warning(nullptr, tr("Error"), tr("Cannot open file:\n%1").arg(QString::fromStdString(path)));
+        QMessageBox::warning(nullptr, tr("Error"), tr("Cannot save file:\n%1\n%2").arg(QString::fromStdString(path)).arg(QString::fromStdString(error)));
         res->success = false;
         res->message = error;
         return;
