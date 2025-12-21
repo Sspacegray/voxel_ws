@@ -1,0 +1,47 @@
+{
+  "task_id": "path_20251221_184653",
+  "paths": [
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3371, "y": -669 },
+      "end_point": { "x": -1, "y": -622 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1, "y": -622 },
+      "end_point": { "x": 9, "y": 3186 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 9, "y": 3186 },
+      "end_point": { "x": 4127, "y": 3102 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4127, "y": 3102 },
+      "end_point": { "x": 4070, "y": 508 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4070, "y": 508 },
+      "end_point": { "x": 143, "y": 388 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 143, "y": 388 },
+      "end_point": { "x": 58, "y": -2864 }
+    }
+  ]
+}

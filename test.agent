@@ -1,0 +1,30 @@
+name: test.agent
+purpose: |
+  A persistent “middle agent” for robot controller debugging: launch simulation + Nav2,
+  publish/execute a fixed global path, evaluate tracking quality, and leave an auditable
+  report even if the human (or chat) disconnects.
+
+how_it_persists: |
+  This agent runs inside a tmux session. You can disconnect at any time; processes and logs
+  keep running. Re-attach later and read the generated Markdown report.
+
+entrypoints:
+  start: tools/test_agent/test_agent.sh start --controller pp
+  attach: tools/test_agent/test_agent.sh attach
+  status: tools/test_agent/test_agent.sh status
+  stop: tools/test_agent/test_agent.sh stop
+  report: tools/test_agent/test_agent.sh report
+
+what_it_measures:
+  - cross_track_error_rms_m
+  - cross_track_error_p95_m
+  - cross_track_error_max_m
+  - distance_to_goal_m (over time)
+  - average_speed_mps
+  - completion_time_s (if goal reached)
+
+notes:
+  - Waypoint editor saves JSON/TXT in pp_controller segment JSON format (mm units). That is
+    separate from Nav2 global path (nav_msgs/Path). No conflict: they serve different stacks.
+  - For Nav2 path tracking, waypoint_editor publishes nav_msgs/Path (default topic: waypoint_path).
+

@@ -130,13 +130,15 @@ WaypointEditorPanel::WaypointEditorPanel(QWidget *parent) : rviz_common::Panel(p
     load_3d_map_button_    = new QPushButton("Load 3D Map", this);
     load_waypoints_button_ = new QPushButton("Load WPs", this);
     save_waypoints_button_ = new QPushButton("Save WPs", this);
-    execute_button_        = new QPushButton("Start Navigation", this);
+    execute_button_        = new QPushButton("Nav2: Follow WPs", this);
+    publish_path_button_   = new QPushButton("Publish Path", this);
+    execute_path_button_   = new QPushButton("Nav2: Follow Path", this);
     undo_button_           = new QPushButton("Undo", this);
     redo_button_           = new QPushButton("Redo", this);
     clear_button_          = new QPushButton("Clear All", this);
 
     // Button sizing/styling to break monotony
-    for (auto *btn : {load_2d_map_button_, load_3d_map_button_, load_waypoints_button_, save_waypoints_button_, execute_button_}) {
+    for (auto *btn : {load_2d_map_button_, load_3d_map_button_, load_waypoints_button_, save_waypoints_button_, execute_button_, publish_path_button_, execute_path_button_}) {
         btn->setMinimumWidth(90);
         btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     }
@@ -173,6 +175,23 @@ WaypointEditorPanel::WaypointEditorPanel(QWidget *parent) : rviz_common::Panel(p
     wp_row2->setSpacing(8);
     wp_row2->addWidget(load_waypoints_button_, /*stretch=*/1);
     wp_row2->addWidget(save_waypoints_button_, /*stretch=*/1);
+    
+    // Path density selection (hidden advanced setting)
+    QLabel *density_label = new QLabel("Δ:", this);
+    density_label->setFont(smallFont);
+    density_label->setToolTip("Path interpolation density for saving");
+    path_density_combo_ = new QComboBox(this);
+    path_density_combo_->setFont(smallFont);
+    path_density_combo_->addItem("0.1 m", 0.1);
+    path_density_combo_->addItem("0.2 m", 0.2);
+    path_density_combo_->addItem("0.3 m", 0.3);
+    path_density_combo_->addItem("0.4 m", 0.4);
+    path_density_combo_->addItem("0.5 m", 0.5);
+    path_density_combo_->setCurrentIndex(0);  // Default 0.1m
+    path_density_combo_->setToolTip("Path interpolation density when saving");
+    path_density_combo_->setMaximumWidth(70);
+    wp_row2->addWidget(density_label);
+    wp_row2->addWidget(path_density_combo_);
 
     QVBoxLayout *wp_layout = new QVBoxLayout;
     wp_layout->setContentsMargins(0, 0, 0, 0);
@@ -180,6 +199,13 @@ WaypointEditorPanel::WaypointEditorPanel(QWidget *parent) : rviz_common::Panel(p
     wp_layout->addLayout(wp_row1);
     wp_layout->addLayout(wp_row2);
     wp_layout->addWidget(execute_button_);
+
+    QHBoxLayout *wp_row3 = new QHBoxLayout;
+    wp_row3->setContentsMargins(6, 0, 6, 6);
+    wp_row3->setSpacing(8);
+    wp_row3->addWidget(publish_path_button_, /*stretch=*/1);
+    wp_row3->addWidget(execute_path_button_, /*stretch=*/1);
+    wp_layout->addLayout(wp_row3);
 
     QGroupBox *action_group = new QGroupBox(tr("Waypoints"), this);
     action_group->setFont(smallFont);
@@ -276,6 +302,8 @@ WaypointEditorPanel::WaypointEditorPanel(QWidget *parent) : rviz_common::Panel(p
     connect(redo_button_, &QPushButton::clicked, this, &WaypointEditorPanel::onRedoWaypointsButtonClick);
     connect(clear_button_, &QPushButton::clicked, this, &WaypointEditorPanel::onClearWaypointsButtonClick);
     connect(execute_button_, &QPushButton::clicked, this, &WaypointEditorPanel::onExecuteWaypointsButtonClick); // New connection
+    connect(publish_path_button_, &QPushButton::clicked, this, &WaypointEditorPanel::onPublishPathButtonClick);
+    connect(execute_path_button_, &QPushButton::clicked, this, &WaypointEditorPanel::onExecutePathButtonClick);
     connect(auto_toggle_button_, &QPushButton::toggled, this, &WaypointEditorPanel::onAutoToggle);
 }
 
@@ -291,9 +319,25 @@ void WaypointEditorPanel::onInitialize()
     redo_client_      = nh_->create_client<std_srvs::srv::Trigger>("redo_waypoints");
     clear_client_     = nh_->create_client<std_srvs::srv::Trigger>("clear_waypoints");
     execute_client_   = nh_->create_client<std_srvs::srv::Trigger>("execute_waypoints"); // New client
+    publish_path_client_ = nh_->create_client<std_srvs::srv::Trigger>("publish_path");
+    execute_path_client_ = nh_->create_client<std_srvs::srv::Trigger>("execute_path");
     auto_start_client_= nh_->create_client<std_srvs::srv::Trigger>("start_auto_waypoints");
     auto_stop_client_ = nh_->create_client<std_srvs::srv::Trigger>("stop_auto_waypoints");
     auto_distance_pub_= nh_->create_publisher<std_msgs::msg::Float64>("auto_waypoint_min_distance", rclcpp::QoS(1).transient_local());
+    
+    // Path interpolation density publisher
+    path_density_pub_ = nh_->create_publisher<std_msgs::msg::Float64>(
+        "path_interpolation_density", rclcpp::QoS(1).transient_local());
+    
+    // Publish initial density value and connect ComboBox signal
+    auto publishDensity = [this](int index) {
+        double density = path_density_combo_->itemData(index).toDouble();
+        std_msgs::msg::Float64 msg;
+        msg.data = density;
+        path_density_pub_->publish(msg);
+    };
+    connect(path_density_combo_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, publishDensity);
+    publishDensity(path_density_combo_->currentIndex());  // Publish initial value
 
     last_wp_dist_sub_ = nh_->create_subscription<std_msgs::msg::Float64>(
         "last_wp_dist", 10,
@@ -516,6 +560,50 @@ void WaypointEditorPanel::onSaveWaypointsButtonClick()
                 ok = false;
             }
             postStatusMessage(ok ? tr("Saved WPs") : tr("Failed to save WPs"));
+        });
+}
+
+void WaypointEditorPanel::onPublishPathButtonClick()
+{
+    if (!publish_path_client_ || !publish_path_client_->wait_for_service(std::chrono::seconds(1))) {
+        postStatusMessage(tr("publish_path service not available"));
+        return;
+    }
+    auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
+    publish_path_client_->async_send_request(req,
+        [this](rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture future) {
+            bool ok = false;
+            std::string msg = "Publish path failed";
+            try {
+                auto response = future.get();
+                ok = response->success;
+                msg = response->message;
+            } catch (...) {
+                ok = false;
+            }
+            postStatusMessage(QString::fromStdString(ok ? msg : msg));
+        });
+}
+
+void WaypointEditorPanel::onExecutePathButtonClick()
+{
+    if (!execute_path_client_ || !execute_path_client_->wait_for_service(std::chrono::seconds(1))) {
+        postStatusMessage(tr("execute_path service not available"));
+        return;
+    }
+    auto req = std::make_shared<std_srvs::srv::Trigger::Request>();
+    execute_path_client_->async_send_request(req,
+        [this](rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture future) {
+            bool ok = false;
+            std::string msg = "Execute path failed";
+            try {
+                auto response = future.get();
+                ok = response->success;
+                msg = response->message;
+            } catch (...) {
+                ok = false;
+            }
+            postStatusMessage(QString::fromStdString(ok ? msg : msg));
         });
 }
 

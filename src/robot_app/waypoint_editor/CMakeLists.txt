@@ -19,6 +19,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -71,6 +72,7 @@ ament_target_dependencies(${PROJECT_NAME}
   std_srvs
   std_msgs
   nav2_msgs
+  nav_msgs
   sensor_msgs
   pcl_conversions
   rclcpp_action
@@ -118,6 +120,7 @@ ament_export_dependencies(
   std_srvs
   std_msgs
   nav2_msgs
+  nav_msgs
   yaml-cpp
 )
 

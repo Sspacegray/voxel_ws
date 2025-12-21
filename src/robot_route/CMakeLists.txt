@@ -32,6 +32,9 @@ install(DIRECTORY
 install(PROGRAMS
   scripts/route_goal_bridge.py
   scripts/waypoint_route_navigator.py
+  scripts/trajectory_recorder.py
+  scripts/path_comparison.py
+  scripts/auto_load_waypoints.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

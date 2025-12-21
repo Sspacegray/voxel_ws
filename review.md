@@ -1,353 +1,163 @@
-# Ubuntu 24.04 + ROS 2 Jazzy 适配 Code Review（voxel_ws）
+# 代码库审查报告
 
-## 0. 你给的信息（简要复述）
+## 1. 项目概览
+- **项目类型**: ROS 2 工作空间 (机器人仿真与控制)。
+- **核心功能包**: `wpr_simulation2` (以及 `src/` 目录下的其他包)。
+- **构建系统**: `ament_cmake` (标准 ROS 2 构建工具)。
+- **编程语言**: C++ (主要), Python (脚本)。
 
-- 你把系统从 Ubuntu 22.04 升级到 Ubuntu 24.04。
-- 现有工作空间代码原本面向 Ubuntu 22.04 + ROS 2 Humble，需要“完全适配新系统”。
+## 3. 代码质量审查
 
-结合我在本机 workspace 的检查结果：当前环境已经是 **Ubuntu 24.04.3 + ROS 2 Jazzy**（`ROS_DISTRO=jazzy`），代码能编译，但仍存在较多“文档/配置/构建脚本仍停留在 Humble/22.04 时代”的耦合点，需要系统性清理。
+### `wpr_simulation2/src/wpb_home_mani_sim.cpp`
+该节点用于仿真机械臂控制器。
+- **风格**: 功能正常，但属于“演示级代码 (Demo Quality)”。
+- **观察发现**:
+    - **魔术数字 (Magic Numbers)**: 使用了硬编码的数值，如 `0.493`, `1.036`, `0.003`。
+        - *建议*: 将这些数值移至 ROS 参数中，或在类顶部定义为 `constexpr` 命名常量。
+    - **数据结构**: 使用了 C 风格数组 `float target_position_[6]`。
+        - *建议*: 使用 `std::array<double, 6>` 或 `std::vector<double>`。ROS 2 消息默认使用 `double` 类型；混合使用 `float` 和 `double` 会导致隐式类型转换。
+    - **并发性**: `pub_msg_.data` 在 `publishMessage` (定时器回调) 中被修改。逻辑看起来是单线程的 (标准的 ROS 2 spin)，因此没有竞争条件。
 
-## 1. 环境基线（本机实测）
+### `wpr_simulation2/demo_cpp/5_lidar_data.cpp`
+一个简单的雷达数据订阅节点。
+- **风格**: 基础用法。
+- **观察发现**:
+    - **全局变量**: 使用了 `std::shared_ptr<rclcpp::Node> node` 作为全局变量。
+        - *建议*: 将逻辑封装在类中（参考 `WPB_Home_Mani_Sim_Node`），以避免使用全局变量。这样更有利于代码组合和生命周期管理。
 
-- OS: Ubuntu 24.04.3 LTS（Noble）
-- ROS: ROS 2 Jazzy（`/opt/ros/jazzy`）
-- Toolchain: GCC 13.3.0、CMake 3.28.3
-- Python: 3.12.3
+### 构建系统 (`CMakeLists.txt`)
+- **结构**: 组织良好。
+- **依赖项**: 正确使用了 `ament_target_dependencies` 来链接 `rclcpp`, `std_msgs` 等库。
+- **安装**: 正确配置了目标和目录的安装规则。
+- **目标 (Targets)**: 在一个 `CMakeLists.txt` 中定义了大量目标。对于演示包来说这以接受，但确实导致了较长的编译时间和较高的内存占用。
 
-## 2. 信息缺口 & 风险点（迁移时最容易踩坑）
+## 5. 工业级路径追踪系统评估（结合 `function.md`）
 
-- **目标 ROS 版本未显式确认**：Ubuntu 24.04 官方对应 ROS 2 Jazzy；若你坚持 Humble，需要容器/源码编译，成本和风险显著更高。
-- **平台与实时性约束不明**：x86 / Jetson 算力差异会直接影响 MPPI / LIO 实时性；参数与线程策略需要按平台调。
-- **传感器 topic/时戳模式不明**：IMU/LiDAR 是否硬件时间戳、是否同源时钟，直接影响 LIO 和 TF 同步；OS 升级后驱动/内核变化也可能改变时间行为。
+### 5.1 当前方案的“实际架构”梳理
+- **主入口 (仿真一键启动)**: `src/robot_simulation/wpr_simulation2/launch/navigation.launch.py`
+  - 启动仿真环境 + Nav2 bringup + RViz(路点编辑器配置) + 轨迹记录器 + `pp_controller` 独立节点。
+- **路点编辑器**: `src/robot_app/waypoint_editor/`
+  - RViz 中添加路点、支持“保存时插值密集点”、并自动保存到 `wpfile/`。
+  - 也支持直接向 Nav2 发送 `FollowPath`（不用自研控制器也能跑）。
+- **自研 PP 控制器（两种形态）**:
+  - **独立节点**（带 `start/stop/pause/resume/load_path` 服务、三态运动）: `src/pp_controller/src/pp_node.cpp`
+  - **Nav2 Controller 插件**（可通过 Nav2 `controller_server` 切换）: `src/pp_controller/src/nav2_pure_pursuit_controller.cpp`
+- **轨迹记录与对比**:
+  - 记录器: `src/robot_route/scripts/trajectory_recorder.py`
+  - 对比脚本: `src/robot_route/scripts/path_comparison.py`
+- **路网/Route Server（另一条路线）**:
+  - Route Server 参数: `src/robot_route/config/route_server.yaml`
+  - 路网处理工具: `src/robot_route/maps/process_graph.py`
+  - 更完整的 Nav2 + Route Server 架构示例: `src/robot_navigation/src/launch/navigation.launch.py`
 
-> 下面建议默认按“Ubuntu 24.04 + ROS 2 Jazzy 原生适配”展开；如果你要继续用 Humble，请先告诉我你的选择。
+> 结论：仓库里目前“同时存在”两套导航/路径执行路线：  
+> (A) `pp_controller` 独立节点路线（工业风格：停-转-直线跟踪）  
+> (B) Nav2 + Route Server / FollowPath 路线（官方能力：密集路径、恢复、重规划、控制器插件体系）
 
-## 3. 工作空间包清单（colcon 可见 22 个 ament_cmake 包）
+### 5.2 `function.md` 功能对照（是否落地 & 关键偏差）
 
-| 包 | 路径 | 作用 | Jazzy 风险 |
-|---|---|---|---|
-| `robot_navigation` | `src/robot_navigation/src` | Nav2 参数/launch/map/rviz | 中高（参数/BT 变更） |
-| `robot_route` | `src/robot_route` | Route Server 相关桥接脚本/配置 | 中（依赖声明/异步模型） |
-| `robot_base` | `src/robot_base` | ros2_control 硬件接口 + 工具脚本 | 中（驱动/串口/实时） |
-| `livox_ros_driver2` | `src/robot_hardware_driver/livox_ros_driver2` | Livox 驱动 | 中（外部 SDK/ABI） |
-| `hipnuc_imu`/`hipnuc_gnss`/`hipnuc_lib_package` | `src/robot_hardware_driver/hipimu_driver/*` | Hipnuc IMU/GNSS | 低-中（设备权限/串口） |
-| `fast_lio`/`point_lio` | `src/robot_localization/*` | LIO 里程计/建图 | 中（CMake/PythonLibs） |
-| `faster_lio` | `src/robot_localization/faster-lio` | Faster-LIO | 中（CMake/rosidl 过时接口） |
-| `lio_sam` | `src/robot_localization/LIO-SAM` | LIO-SAM | 中（rosidl 过时接口） |
-| `icp_registration` | `src/robot_relocalization/icp_registration` | ICP 重定位 | 低（头文件安装告警） |
-| `pointcloud_to_laserscan` | `src/robot_perception/pointcloud_to_laserscan` | 点云转激光 | 低（头文件安装告警） |
-| `imu_complementary_filter` | `src/robot_perception/imu_complementary_filter` | IMU互补滤波 | 低 |
-| `linefit_ground_segmentation*` | `src/robot_perception/linefit_ground_segementation_ros2/*` | 地面分割 | 低 |
-| `pcd2pgm`/`pcd2elevation` | `src/tools/*` | 地图工具 | 低 |
-| `waypoint_editor` | `src/robot_app/waypoint_editor` | 路点编辑器 | 低（文档需更新） |
-| `costmap_converter*` | `src/robot_navigation/third_party/costmap_converter/*` | costmap 转换 | 低（遗留脚本 shebang） |
-| `rviz_imu_plugin` | `src/robot_hardware_driver/hipimu_driver/rviz_imu_plugin` | RViz IMU 插件 | 低 |
+#### 1) 系统启动
+- **已实现**：`wpr_simulation2/launch/navigation.launch.py` 支持 `waypoint_file` / `auto_start` 参数。
+- **建议**：把“默认路径文件”从源码硬改，升级为 launch 参数 + 文档示例（减少误用）。
 
-## 4. 主要问题与修改建议（面向 Ubuntu24 + Jazzy）
+#### 2) Waypoint Editor（RViz 路点编辑器）
+- **已实现**：
+  - 支持 RViz 绘制路点、密度 0.1–0.5m（Panel 里 `Δ` 下拉）。
+  - 保存时插值密集点，并自动写入 `src/robot_app/waypoint_editor/wpfile/`。
+- **关键偏差/风险（严重）**：
+  - 插值后自动保存的 JSON，当前仍使用“分段路径（segment）”格式导出，并且 `start_spin` 被固定写为 `1`。  
+  - `pp_controller` 独立节点会在每个 segment 开始前执行原地旋转：如果插值密度为 0.1m，会导致“每 0.1m 就停一下并旋转”，路径几乎无法执行。
+- **建议**（两种方向，择一即可）：
+  1) **保留 segment JSON**：`WaypointJson::Save()` 对插值后的点将 `start_spin` 只对第 1 段（或转角超过阈值的段）置 `1`，其余段置 `0`。  
+  2) **更推荐**：不要用 `pp_node` 执行插值后的 JSON；改用 Waypoint Editor 的 **Nav2 FollowPath** 功能 + `pp_controller` 的 Nav2 插件（或 Nav2 RPP），让 Nav2 做连续曲线跟踪。
 
-### 4.1 文档/镜像仍写死 Humble/Ubuntu22（需要统一口径）
+#### 3) PP Controller（三态运动 + 服务接口）
+- **已实现**：
+  - 服务：`/pp/start` `/pp/stop` `/pp/pause` `/pp/resume` `/pp/load_path`
+  - 话题：`/pp/state` `/pp/progress` `/pp/obstacle` `/pp/lateral_deviation`
+  - 具备基础的障碍检测停车（scan）与 costmap 减速。
+- **关键风险（严重）**：`pp_node` 与 Nav2 同时启动时，**可能同时向 `/cmd_vel` 输出**，产生控制权抢占/抖动（尤其是在 `pp_node` 开始执行路径时）。
+  - Nav2 bringup 本身通常也会经 `controller_server` / `velocity_smoother` 输出速度（默认也是 `/cmd_vel`）。
+- **建议**：
+  - **明确“单一速度源”**：同一时刻只能有一个节点向底盘控制链路输出速度。
+  - 最稳妥做法：引入 `twist_mux` / `twist_stamper` / “速度仲裁层”，或像 `robot_navigation` 里那样 remap（例如 Nav2 输出到 `cmd_vel_nav`，PP 输出到 `cmd_vel_pp`，最后 mux 到 `/cmd_vel`）。
 
-发现：
-- `README.md` 仍声明 “Ubuntu 22.04 + ROS 2 Humble”。
-- `src/robot_app/RVIZ-RQT-VISUA/RVIZ-RQT-VISUAL-main/Dockerfile` 使用 `ros:humble-perception-jammy` 且 `source /opt/ros/humble/setup.bash`。
-- `src/robot_app/RVIZ-RQT-VISUA/RVIZ-RQT-VISUAL-main/frontend/.../SystemInfo.vue` 写死 “ROS2 Humble”。
-- 多个第三方 README 仍以 Humble/22.04 为例（不致命，但会误导新环境部署）。
+#### 4) 轨迹记录器
+- **已实现**：服务与可视化话题齐全，能导出 TUM。
+- **已改进（建议保留）**：
+  - `trajectory_recorder.py` 已支持 `pose_source=tf`（默认），直接采样 TF `map->base_link`，用于评估最可信。
+  - 仍保留 `amcl_pose` / `odom` 作为 fallback（但 `odom` 模式不建议用于评估）。
 
-建议（KISS）：
-- 把 **仓库根 `README.md`** 作为唯一“权威安装指南”，明确：
-  - Ubuntu 24.04 → ROS 2 Jazzy（推荐/默认）
-  - Ubuntu 22.04 → ROS 2 Humble（兼容/历史）
-- Dockerfile 用 `ARG ROS_DISTRO=jazzy` + `FROM ros:${ROS_DISTRO}-...`，避免散落多份 Humble 固化信息（DRY）。
+#### 5) 控制器切换
+- **已实现**：`wpr_simulation2/config/nav2_params.yaml` 提供 RPP / Custom PP / DWB / TEB 的配置块。
+- **建议**：
+  - 当前是“注释/取消注释 + 重启”，适合开发期；若要做严谨对比评测，建议引入：
+    - `controller_selector`（Nav2 BT 插件）实现运行时切换；
+    - 或者用 Launch 参数选择 params 文件，避免人工编辑 YAML 带来的不一致。
 
-### 4.2 Nav2 Jazzy：BT 与参数文件是迁移主战场
-
-#### 4.2.1 BT 插件库缺项（Route Server 相关）
-
-发现：
-- `src/robot_navigation/src/params/nav2_params.yaml` 的 `bt_navigator.plugin_lib_names` 列表里 **没有** route 相关 BT node（如 `nav2_compute_and_track_route_bt_node` / `nav2_compute_route_bt_node`）。
-- `src/fix/action.md` 已指出：旧版 `navigate_on_route_graph_w_recovery.xml` 不适配 Jazzy，并给了 Arch(1) 新 BT 的落地方案。
-
-建议（SRP + KISS）：
-- **把 Route 专用 BT 单独成文件**（不要污染默认 NavToPose BT），例如按 `src/fix/action.md` 的方式新建 `navigate_on_route_graph_arch1_jazzy.xml`。
-- 同步把 route BT node 动态库加入 `plugin_lib_names`，否则 BT 加载会失败。
-
-#### 4.2.2 旧参数/无效参数：Jazzy 下会“静默失效”
-
-发现：
-- `nav2_params.yaml` 中 MPPI 段落存在 “Humble only” 注释参数；其中 `reset_period` 在当前 Jazzy 安装里未检索到（高度怀疑已移除/重命名），会导致你以为生效但实际被忽略。
-- `FollowPath` 下的自定义参数（`adjustThre/minAngleDiff/...`）只有在你**自研/改过** `nav2_mppi_controller` 时才可能生效；否则同样会被忽略。
-
-建议（工程可验证性优先）：
-- 启动后用 `ros2 param list /controller_server` 和 `ros2 param get` 实测参数是否存在（避免“看 YAML 调参”的错觉）。
-- 对“不被支持的参数”直接删掉（YAGNI），把有效参数收敛成一份 Jazzy 可验证的最小集合（KISS）。
-
-#### 4.2.3 你现有的 nav2 参数还存在业务级风险（与 OS 升级叠加会放大）
-
-这些在 `src/fix/fix.md` 已点到，我建议当作 Jazzy 迁移验收项：
-- `yaw_goal_tolerance: 3.14` 会让“到点转正再前进”失效。
-- `minAngleDiff: 365.0` 量纲明显不合理（MPPI 多数参数用弧度）。
-- `odom_topic: "/Odometry"` 需要确认真实话题，否则控制器无里程计会表现为“卡住/不动”。
-
-### 4.3 CMake 3.28 / GCC13 下的构建兼容性问题（建议尽早还债）
-
-#### 4.3.1 `find_package(PythonLibs)` 已被 CMake 弃用（Ubuntu24 典型告警源）
-
-发现：
-- `src/robot_localization/fast_lio/CMakeLists.txt`、`src/robot_localization/point_lio/CMakeLists.txt` 使用 `find_package(PythonLibs REQUIRED)`，在 CMake 3.28 下触发 CMP0148 相关告警。
-
-建议（可维护性 + 向前兼容）：
-- 用 `find_package(Python3 COMPONENTS Interpreter Development REQUIRED)` 替换，并改用 `Python3::Python` / `Python3_INCLUDE_DIRS` / `Python3_LIBRARIES`。
-- 如果仅用于 `matplotlibcpp.h` 可视化且运行时不需要，建议改成 **编译开关**（例如 `WITH_MATPLOTLIB=OFF` 默认关闭）（YAGNI + KISS）。
-
-#### 4.3.2 全局乱改 `CMAKE_CXX_FLAGS` / 标准版本冲突（会放大工具链升级风险）
-
-典型问题：
-- `fast_lio` 同时设置 `CMAKE_CXX_STANDARD 14`、又手动塞 `-std=c++17`，还重复添加 `-std=c++0x` 等。
-- `faster_lio` 里存在未 `find_package` 就引用 `${EIGEN3_INCLUDE_DIR}` / `${yaml-cpp_INCLUDE_DIRS}` / `${PYTHON_*}` 的情况（目前可能“恰好能编”，但非常脆）。
-
-建议（KISS + DRY）：
-- 统一用 `set(CMAKE_CXX_STANDARD 17)` + `target_compile_options`（按 target 粒度），不要全局覆盖 `CMAKE_CXX_FLAGS`。
-- 把依赖显式 `find_package` 出来，避免“靠系统 include 路径碰运气”。
-
-#### 4.3.3 `rosidl_target_interfaces()` 在 Jazzy 已提示弃用
-
-发现：
-- `src/robot_localization/LIO-SAM/CMakeLists.txt`、`src/robot_localization/faster-lio/CMakeLists.txt` 使用 `rosidl_target_interfaces()`，Jazzy 构建会提示弃用。
-
-建议（OCP：为后续发行版保留扩展空间）：
-- 按 CMake 提示替换为：
-  - `rosidl_get_typesupport_target(cpp_typesupport_target ...)`
-  - `target_link_libraries(target "${cpp_typesupport_target}")`
-
-### 4.4 package.xml 依赖声明不完整/不规范（影响 rosdep 与可复现部署）
-
-发现：
-- `robot_navigation` 是纯配置包，但 `package.xml` 未声明 `nav2_*` 相关运行依赖；新机器用 `rosdep install` 很可能装不全。
-- `robot_route` 安装了 Python 可执行脚本，但 `package.xml` 未声明 `rclpy`、`nav2_msgs`、`tf2_ros`、`tf2_geometry_msgs`、`geometry_msgs`、`nav_msgs` 等运行依赖。
-- 多处直接把 apt 包名写进 `<depend>`（如 `libpcl-all-dev`/`libserial-dev`/`git`/`apr`），跨平台/跨发行版时 rosdep 易失败。
-
-建议（DRY + 可复现）：
-- 依赖声明按“能 rosdep 一键装全”为目标整理；对于系统包，尽量用 rosdep key（必要时在 README 里明确 apt 包名作为补充）。
-
-### 4.5 Python 脚本 shebang / ROS1 遗留物（Ubuntu24 常见运行时炸点）
-
-发现：
-- `src/robot_localization/faster-lio/result/rpe_odom.py` 使用 `#!/usr/bin/env python`（Ubuntu24 默认可能没有 `python`）。
-- `src/robot_localization/LIO-SAM/config/doc/kitti2bag/kitti2bag.py` 是 ROS1 脚本（`rospy/rosbag/tf`），且 shebang 写成 `#!env python`。
-- `costmap_converter` 里存在 ROS1 dynamic_reconfigure 风格 `.cfg`，同样是 `#!/usr/bin/env python`（多半不在 Jazzy 运行路径上，但会误导维护者）。
-
-建议（SRP + KISS）：
-- 明确标注哪些是“仅文档/历史遗留/ROS1 工具”，必要时放到 `tools_ros1/` 或 README 标红；否则新同事会以为这是 Jazzy 运行链路的一部分。
-- 需要继续使用 ROS1 工具时，用容器隔离（避免污染 Jazzy 环境）。
-
-## 5. 建议的迁移执行顺序（3~8 个可落地子任务）
-
-1) **口径统一**：更新根 `README.md`，明确 Jazzy/Noble 为默认；同步修正 Dockerfile 和前端显示版本（DRY）。
-2) **Nav2 Jazzy 路网链路打通**：按 `src/fix/action.md` 落地新 BT + 补齐 `plugin_lib_names`，并清理无效参数（KISS）。
-3) **补齐依赖声明**：修正 `robot_navigation/package.xml`、`robot_route/package.xml` 的 `exec_depend`（可复现部署）。
-4) **修 CMake 弃用点**：替换 `PythonLibs`、替换 `rosidl_target_interfaces`、清理 `CMAKE_CXX_FLAGS` 乱改（向后兼容）。
-5) **处理 Python shebang/ROS1 遗留**：将 `#!/usr/bin/env python` 统一为 python3，或隔离到 ROS1 工具目录（降低运行时踩坑）。
-
-## 6. 验证建议（回放/实机都能做）
-
-### 6.1 构建验证
-
-```bash
-cd ~/voxel_ws
-rosdep install --from-paths src --ignore-src -r -y
-colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
-source install/setup.zsh
-```
-
-### 6.2 Nav2/Route 验证（建议先 bag 回放再上实机）
-
-启动：
-```bash
-ros2 launch robot_navigation navigation.launch.py
-ros2 lifecycle get /route_server
-ros2 action list | grep route
-```
-
-录包（最小闭环链路 + 排障必备）：
-```bash
-ros2 bag record \
-  /tf /tf_static \
-  /scan /pointcloud \
-  /imu /Odometry \
-  /cmd_vel \
-  /plan \
-  /route_graph \
-  /local_costmap/costmap_raw /global_costmap/costmap_raw
-```
-
-关键观测指标（建议写进你们的迁移验收）：
-- TF 延迟：`ros2 run tf2_tools view_frames`，重点看 `map->odom->base_link` 是否稳定、延迟是否增大。
-- 控制实时性：`controller_frequency` 实测是否达标（CPU 占用/超时日志）。
-- 轨迹偏差：对 `/plan`（或 route dense path）计算横向偏差 RMS，建议 < 0.1 m（按场景调整）。
-
-### 6.3 LIO 验证（时间同步是 Ubuntu 升级后第一大雷）
-
-建议录包：
-```bash
-ros2 bag record \
-  /tf /tf_static \
-  /imu \
-  /livox/lidar /points_raw /points \
-  /Odometry
-```
-
-检查点：
-- IMU/LiDAR 时间戳是否单调、是否同源（不同源就要做 time offset / deskew 配置）。
-- LIO 输出频率、CPU 占用是否较 22.04 有明显变化（内核/编译器升级会改变性能特性）。
-
-## 7. 下一步我需要你确认的两件事（决定迁移路线）
-
-1) 你最终要 **Jazzy** 还是强行保留 **Humble**（容器/源码）？
-2) 目标平台：x86 还是 Jetson（Orin/Xavier）？（决定 MPPI/LIO 的计算预算与参数收敛方式）
+#### 6) 轨迹评估
+- **已实现**：`path_comparison.py` 支持 RMSE / Max / Mean 以及可选调用 `evo_ape/evo_rpe`。
+- **缺口**：
+  - 仓库内当前没有“planned.tum 的标准生成链路”（只有 actual 记录器）。
+  - `function.md` 中对 `path_comparison.py` 的 CLI 示例与脚本参数存在轻微不一致（文档里写了 `--plot`，实际脚本默认就画图，只有 `--no-plot`）。
+- **建议（更工业化的评估闭环）**：
+  - 增加 planned 导出：从 `waypoint_editor` 发布的 `nav_msgs/Path`（或 route_server 输出的 path）导出“参考轨迹”（至少用于几何误差）。
+  - 对比指标建议分层：
+    - **几何层**：横向误差（到 polyline 的最短距离，而非仅到离散点）、最大误差、95 分位误差。
+    - **动态层**：速度/角速度平滑度、急停次数、tracking overshoot、到站耗时。
 
 ---
 
-## 8. 近期实机问题：发点跑不起来 + 地面分割不干净（基于当前代码链路的结构性分析）
+## 6. 关键问题与改进建议（按优先级）
 
-### 8.0 你给的新信息（简要复述）
+### P0（会直接导致“跑不起来 / 评估不可信”）
+1. **`/cmd_vel` 控制权冲突风险**  
+   `wpr_simulation2/navigation.launch.py` 同时启动 Nav2 与 `pp_controller` 独立节点：当 `pp_node` 开始执行路径时会抢占 `/cmd_vel`，需要“互斥/仲裁/模式切换”。
+2. **轨迹记录坐标系错误（已修复）**  
+   `trajectory_recorder.py` 已默认改为 TF 采样（`pose_source=tf`），评估坐标系问题已显著缓解。
+3. **插值 JSON 与 `pp_node` 运动模式不兼容**  
+   插值后产生大量 segment 且 `start_spin=1`，导致频繁“停-转”，无法连续跟踪。
 
-- 目前“发点（点云/或最终 /scan）无法正常跑”，表现为链路某段没有输出或下游一直报 TF/时间相关错误。
-- 雷达前置且有明显俯仰倾斜，导致地面分割总有残留点；你已经尝试调参但没有根本解决。
-
-信息缺口 & 风险点（会直接决定修复方向）：
-- 不清楚你说的“发点”具体指哪一段：`/livox/lidar`（原始驱动）、`/lidar/cloud`（tilt_compensator 后）、`/cloud_registered_body`（Fast-LIO 后）、还是 `/scan`（导航最终输入）。
-- 不清楚雷达倾角是否固定（装配角）还是会随底盘姿态变化（上下坡/加减速俯仰）；后者需要“动态重力对齐”，单纯静态 pitch 参数必然会漏点。
-- 不清楚你是否在用 namespace（当前 `robot_navigation/src/launch/bringup.launch.py` 声明了 `namespace` 但未真正应用），而多个节点使用了**绝对话题名**（前导 `/`），容易导致命名空间场景下订阅不到数据。
-
-> 下面先按“倾角主要来自安装固定角 + 平地行驶为主”的假设给出改进方案；如果你实际经常上下坡/颠簸，需要把方案切到“IMU 动态对齐”。
-
-### 8.1 当前链路（从 launch/代码还原的数据流与 I/O）
-
-入口节点（硬件与预处理）：
-- `src/robot_base/launch/bringup.launch.py` 启动：
-  - `livox_ros_driver2_node`：发布 `/livox/lidar`（`livox_ros_driver2/msg/CustomMsg`）与 `/livox/imu`（`sensor_msgs/msg/Imu`，取决于驱动配置）。
-  - `robot_base/tilt_compensator`：订阅 `/livox/lidar`、`/livox/imu`，发布 `/lidar/cloud`（CustomMsg）与 `/lidar/imu`（Imu）。
-
-LIO（里程计与注册点云）：
-- `src/robot_navigation/src/launch/bringup.launch.py` 启动 `fast_lio/fastlio_mapping`：
-  - 订阅（来自 `src/robot_localization/fast_lio/config/mid360.yaml`）：
-    - `common.lid_topic: /lidar/cloud`
-    - `common.imu_topic: /lidar/imu`
-  - 发布：
-    - `/cloud_registered_body`（`sensor_msgs/msg/PointCloud2`，`frame_id=body`，见 `src/robot_localization/fast_lio/src/laserMapping.cpp`）
-
-地面分割与 2D 化：
-- `linefit_ground_segmentation_ros/ground_segmentation_node`：
-  - 订阅：当前 launch 覆盖成 `input_topic=/cloud_registered_body`
-  - 输出：`/segmentation/obstacle`（供下游转 `/scan`）
-  - 关键点：该节点支持参数 `gravity_aligned_frame`，会用 TF 只取旋转（去平移）做“重力对齐”后再分割（见 `src/robot_perception/linefit_ground_segementation_ros2/linefit_ground_segmentation_ros/src/ground_segmentation_node.cc`）。
-- `pointcloud_to_laserscan`：
-  - 输入：`/segmentation/obstacle`
-  - 输出：`/scan`
-  - 依赖：必须能在消息时间戳处查到 `cloud_in.frame_id -> target_frame` 的 TF。
-
-### 8.2 “发点无法正常跑”的高概率断点（按排查优先级）
-
-1) 消息类型误判（最常见）
-- `/livox/lidar` 在当前配置下是 `CustomMsg`，RViz/很多工具默认按 `PointCloud2` 期待，容易误以为“没发点”。
-- 先用这条确认类型与发布者：
-  - `ros2 topic info -v /livox/lidar`
-
-2) TF/时间戳导致下游丢数据（最容易表现为“/scan 不出”）
-- `linefit` 在 `gravity_aligned_frame` 非空时会做 TF lookup；`pointcloud_to_laserscan` 也需要 TF。
-- 只要**时间戳不单调**、**TF 缺失**、或**TF 与消息时间不同步**，就会出现：
-  - TF extrapolation / lookupTransform failed
-  - 下游不发布 `/scan`（或频率极低）
-
-3) `tilt_compensator` 的“强行 now() 时间戳”带来的结构性副作用
-- 见 `src/robot_base/src/tilt_compensator.cpp`：
-  - LiDAR/IMU 的 `header.stamp` 被直接覆盖为 `now()`（两个回调各自 now，存在抖动与不一致）
-  - 但 `CustomMsg.timebase` 与 `points[].offset_time` 仍是驱动侧时间语义
-- 这会让“看起来时间同步了”，但在需要严格时间语义的模块里（deskew、TF、回放）变得更不可控：**调参很难救回来**。
-
-4) TF 连接关系与几何外参不一致（会同时影响地面分割与 2D 化）
-- 当前 `src/robot_navigation/src/launch/bringup.launch.py` 里给了 `body -> base_footprint` 的静态 TF，但只填了 z（`-0.55`），没有把雷达的 `x/y` 平移与真实俯仰角放进 TF。
-- 如果你希望用 `linefit.gravity_aligned_frame` 来“把倾斜摆平”，那就必须让 TF 里包含真实旋转；否则 gravity alignment 等于没做。
-
-### 8.3 为什么“调 linefit 参数”不一定能根治（从 SRP/数据流一致性角度）
-
-核心矛盾是：**当前系统把“几何外参/姿态对齐”混在数据预处理里（tilt_compensator），但 TF/URDF 又假设传感器没倾斜**。
-
-- SRP 被破坏：`tilt_compensator` 同时在做“坐标系定义改变 + 时间戳重写 + IMU 旋转”，这会影响 Fast-LIO、地面分割、以及任何依赖 TF 的节点；你调 `linefit` 参数只能治“表面症状”。
-- 数据流输入输出语义不一致：点云已经被旋转，但 TF 里仍是“未旋转”的传感器关系，导致下游“以为自己在某个 frame”实际上不是。
-- 结果就是：地面分割会出现“总有一些点漏掉”，而且参数怎么调都只能在“漏地面”和“吃掉障碍物”之间摇摆。
-
-### 8.4 建设性改进路线（优先从最小改动、可回滚方案开始）
-
-#### 方案 A（推荐，KISS + SRP）：把“倾斜矫正”从数据里拿出来，放回 TF；地面分割用 gravity_aligned_frame 做旋转对齐
-
-目标：Fast-LIO 用真实传感器数据跑（保持时序/外参一致），地面分割只在需要时做“旋转摆平”，彼此解耦。
-
-落地步骤（建议按顺序做，方便定位收益）：
-1) 把“真实安装倾角”写回 TF/URDF
-   - `src/robot_base/urdf/robotcar.xacro` 的 `lidar_pitch` 当前为 `0.0`，但你的雷达实际是倾斜安装。
-   - 建议：让 `base_link -> livox_frame` 反映真实物理安装（rpy 里包含 pitch），不要再靠“旋转点云数据”来伪造水平。
-2) 停止在基础链路里改写时间戳（避免把时间问题扩散到所有模块）
-   - 原则：驱动产生的时间戳要么“原样保留”，要么“统一在一个地方做明确的 time sync/offset”，不要在中间节点随手 `now()`。
-3) 让 linefit 只负责分割（SRP）
-   - 设置 `gravity_aligned_frame: base_link`（或 `base_footprint`），让它用 TF 的旋转对齐后再分割。
-   - 这样你只需要把 TF 做对，地面分割会立刻变得“可调且稳定”，而不是靠大 `max_dist_to_line/max_slope` 硬顶。
-4) 再做参数微调（DRY：避免在多个地方重复“补救”同一个倾角）
-   - 倾角问题交给 TF 解决后，再收紧 `max_dist_to_line/max_slope/max_start_height`，避免把真实障碍物也当作地面吞掉。
-
-优点（为什么推荐）：
-- KISS：不引入新算法，只是把系统语义摆正。
-- SRP：Fast-LIO 负责状态估计；TF 负责几何外参；linefit 只做分割。
-- DRY：倾角只在一个地方（TF/URDF）定义一次，不再在参数、预处理、URDF 三处“打补丁”。
-
-#### 方案 B（次选，兼容现状）：保留 tilt_compensator，但把它“隔离”为导航专用分支，不影响 LIO 主链路
-
-目标：Fast-LIO 仍吃“原始 + 时间语义正确”的 IMU/LiDAR；导航再单独用一个“摆平后的点云”去做地面分割/转 /scan。
-
-建议做法（原则级，不展开到完整代码）：
-- 让 `tilt_compensator` 输出一个单独的话题（例如 `/lidar/cloud_leveled`），只给 `linefit/pointcloud_to_laserscan` 用。
-- Fast-LIO 继续订阅 `/livox/lidar`（或驱动转换后的原始）与 `/livox/imu`，避免“旋转 IMU + 改时间戳”影响状态估计。
-
-> 这条路体现 ISP：不同模块只拿自己真正需要的数据，不要共享“被强行改写语义”的通道。
-
-#### 方案 C（你经常上下坡/颠簸时才需要）：用 IMU 动态重力对齐替代固定 pitch
-
-固定 pitch 只能修“装配角”，修不了“底盘姿态变化”。如果你的地面残留点在加减速、上坡、过坎时显著变多，就应该切到动态方案：
-- 以 IMU 的姿态（roll/pitch）实时生成旋转，将点云对齐到重力方向后再做地面分割。
-- 这可以继续沿用 linefit 的 `gravity_aligned_frame` 思路，只是 TF 必须能表达“随时间变化的重力对齐关系”（通常来自滤波后的 IMU 姿态）。
-
-### 8.5 建议的验证与复现（rosbag/回放/指标）
-
-#### 8.5.1 最小闭环录包（定位“发点卡在哪一段”）
-
-```bash
-ros2 bag record \
-  /tf /tf_static \
-  /livox/lidar /livox/imu \
-  /lidar/cloud /lidar/imu \
-  /cloud_registered_body \
-  /segmentation/obstacle /segmentation/ground \
-  /scan
-```
-
-你应该能通过 bag 回放确认：
-- 哪个 topic 从某一段开始就没有数据（频率为 0 或突然中断）
-- TF 是否能在每条点云 stamp 上查到（是否大量出现 extrapolation）
-
-#### 8.5.2 回放建议（尽量复现问题而不依赖实机）
-
-```bash
-ros2 bag play <bag_dir> --clock
-ros2 launch robot_navigation bringup.launch.py use_sim_time:=true
-```
-
-#### 8.5.3 关键观测指标（建议作为“修复是否有效”的客观标准）
-
-- `/scan` 连续性：`ros2 topic hz /scan` 是否稳定接近预期（10Hz/20Hz）。
-- TF 可用性：`ros2 run tf2_ros tf2_echo base_link body` 是否持续输出且没有时间跳变。
-- 地面残留比例：在 RViz 里同时看 `/segmentation/ground` 和 `/segmentation/obstacle`，理想状态下近距离地面点大部分进入 ground（残留点主要来自轮子/底盘遮挡与近场噪声）。
-- LIO 稳定性：Fast-LIO 是否还出现 “IMU and LiDAR not Synced”/loop back 等告警（如果有，先修时间语义，再谈分割参数）。
+### P1（质量/可维护性/可扩展性）
+1. **路径 JSON 解析器过于脆弱**  
+   `PathParser` 为手写字符串查找式解析：对格式变化、空格、嵌套字段都很敏感；一旦 waypoint editor 输出稍有变化容易崩。
+2. **`pp_node` 当前只做“单段直线跟踪”**  
+   对曲线路径/连续折线的平滑性依赖于外部“如何切段”。与 waypoint editor 的“密集点插值”理念存在结构性不匹配。
+3. **Nav2 参数存在潜在模型不一致**  
+   例如 AMCL 使用 `OmniMotionModel` 但项目/文档又强调差速；建议统一运动模型和 TF base frame 约定。
 
 ---
 
-如果你愿意，我下一轮可以按你当前“发点”的具体含义（你告诉我是 `/livox/lidar` 还是 `/scan`）再把排查步骤收敛成一条“最短路径”，并给出对应的最小代码改动点（包含要改的 launch/URDF/参数项）。  
+## 7. 更优解决路线（建议二选一，不建议混用）
+
+### 路线 A（推荐）：完全走 Nav2 / Route Server / FollowPath（保留自研 PP 作为插件）
+适合：需要重规划/恢复/可维护性/控制器可插拔评测的“工业级”场景。
+- Waypoint Editor 负责“画路径/发 FollowPath goal/发布 Path”
+- 控制器用 Nav2 插件体系切换：RPP / `pp_controller::Nav2PurePursuitController` / DWB / TEB
+- Route Server 负责“路网约束 + 自动密集路径生成 + route operations”
+- 轨迹评估：采样 TF(map->base_link) 做 actual；planned 从 Path/route 导出
+
+### 路线 B：独立 `pp_node` 作为“生产执行器”（Nav2 只用于建图/定位或完全不启动）
+适合：只要“停-转-直线”且强调行为确定性、接口简单（start/stop/pause）场景。
+- 必须解决 `/cmd_vel` 仲裁（twist_mux 或 remap）
+- Waypoint Editor 的“插值保存”需要对 `start_spin` 逻辑做适配（否则无法连续跑）
+- 建议把 Path 文件格式升级为“polyline points + 可选转角点标记”，再由 `pp_node` 内部做段切分与转向策略
+
+---
+
+## 8. 建议的下一步行动清单（最小改动优先）
+1. 明确当前你要走的路线（A Nav2 / B pp_node）。否则会反复遇到“重复功能 + 冲突”。
+2. 轨迹评估建议统一用 `trajectory_recorder.py` 的 TF 模式（`pose_source=tf`），再做 APE/RPE 才可信。
+3. 修正插值 JSON 的 `start_spin` 策略，或直接用 Nav2 FollowPath 执行插值路径。
+4. 补齐 planned 导出链路（Path→文件），让评估闭环能一键跑通。
+
+---
+
+## 9. 二次复查（你本次修复后的结论）
+### 已明显改善
+- `robot_route/scripts/trajectory_recorder.py`：增加 TF 采样模式（默认），能从根因解决 “odom 数据写成 map” 的评估失真问题。
+- `robot_app/waypoint_editor`：补齐了 “发布 Path / 直接执行 FollowPath” 的链路，让“插值后的密集路径”可以走 Nav2 控制器连续跟踪（绕开 `start_spin` 的结构性冲突）。
+
+### 仍建议优先处理
+- `start_spin` 仍在 `WaypointJson` 中固定输出为 `1`：如果继续走 `pp_node + 插值 JSON`，仍会出现频繁停转；建议按你既定路线（A/B）做适配。
+- `/cmd_vel` 的“互斥/仲裁”依然是系统级问题：即使空闲时不抢占，执行路径时也需要明确谁在控制底盘（Nav2 / pp_node / 手动）。

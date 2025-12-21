@@ -12,6 +12,8 @@
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <nav2_msgs/action/follow_path.hpp>
 #include <nav2_msgs/action/follow_waypoints.hpp>
 
 #include <string>
@@ -45,7 +47,10 @@ public:
     void handleRedoWaypoints(const std::shared_ptr<std_srvs::srv::Trigger::Request> req, std::shared_ptr<std_srvs::srv::Trigger::Response> res);
     void handleClearWaypoints(const std::shared_ptr<std_srvs::srv::Trigger::Request> req, std::shared_ptr<std_srvs::srv::Trigger::Response> res);
     void handleExecuteWaypoints(const std::shared_ptr<std_srvs::srv::Trigger::Request> req, std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+    void handlePublishPath(const std::shared_ptr<std_srvs::srv::Trigger::Request> req, std::shared_ptr<std_srvs::srv::Trigger::Response> res);
+    void handleExecutePath(const std::shared_ptr<std_srvs::srv::Trigger::Request> req, std::shared_ptr<std_srvs::srv::Trigger::Response> res);
     void publishLineMarker();
+    void publishPath(bool force = false);
     void publishTotalWpsDist();
     void publishLastWpsDist();
     void publishRangeMetrics();
@@ -55,6 +60,7 @@ public:
 private:
     int appendWaypointAndRefresh(Waypoint wp);
     bool transformToMapFrame(const geometry_msgs::msg::PoseStamped &input, geometry_msgs::msg::PoseStamped &output) const;
+    bool buildPath(nav_msgs::msg::Path &path_msg, std::string &error) const;
     void refreshAutoPoseSubscription();
     void handleAutoPose(const geometry_msgs::msg::PoseStamped &pose);
 
@@ -69,7 +75,12 @@ private:
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr redo_service_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr clear_service_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr execute_service_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr publish_path_service_;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr execute_path_service_;
+
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
     rclcpp_action::Client<nav2_msgs::action::FollowWaypoints>::SharedPtr nav_client_;
+    rclcpp_action::Client<nav2_msgs::action::FollowPath>::SharedPtr follow_path_client_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr auto_start_service_;
     rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr auto_stop_service_;
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr auto_distance_sub_;
@@ -86,11 +97,26 @@ private:
     bool pose_dirty_{false};
     double last_displayed_distance_{0.0};
     rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowWaypoints>::SharedPtr current_goal_handle_;
+    rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowPath>::SharedPtr current_path_goal_handle_;
+
+    std::string path_topic_{"waypoint_path"};
+    double path_interpolation_step_m_{0.10};
+    bool path_use_waypoint_orientation_{false};
+    bool publish_path_on_change_{true};
+
+    std::string follow_path_action_name_{"follow_path"};
+    std::string follow_path_controller_id_{"FollowPath"};
+    std::string follow_path_goal_checker_id_{"general_goal_checker"};
 
     void updateLastDistanceFromWaypoint(int waypoint_index);
     double computeSegmentDistance(std::size_t first, std::size_t second) const;
     void commitWaypointChanges(int waypoint_index, bool snapshot_history = true);
     bool isValidWaypointId(int id) const;
+    
+    // Industrial path following: interpolate waypoints with specified density
+    std::vector<Waypoint> interpolateWaypoints(const std::vector<Waypoint>& waypoints, double density_m) const;
+    // Auto-save to wpfile directory with timestamp
+    std::string generateWpfilePath() const;
 };
 
 } // namespace waypoint_editor

@@ -7,6 +7,7 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/menu_entry.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/path.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <std_srvs/srv/trigger.hpp>
 #include <std_msgs/msg/float64.hpp>
@@ -24,6 +25,14 @@
 #include <tf2/exceptions.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <tf2_ros/transform_listener.h>
+
+#include <nav2_msgs/action/follow_path.hpp>
+
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <filesystem>
+#include <chrono>
+#include <sstream>
+#include <iomanip>
 
 #include "waypoint_editor/io/waypoint_csv.hpp"
 #include "waypoint_editor/io/waypoint_yaml.hpp"
@@ -45,12 +54,31 @@ void WaypointEditorTool::onInitialize()
     setName("Add Waypoint");
 
     nh_ = context_->getRosNodeAbstraction().lock()->get_raw_node();
+    
+    // Enable simulation time to match the navigation stack
+    if (!nh_->has_parameter("use_sim_time")) {
+        nh_->declare_parameter("use_sim_time", true);
+    }
+    nh_->set_parameter(rclcpp::Parameter("use_sim_time", true));
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(nh_->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     auto_pose_topic_ = nh_->declare_parameter<std::string>("auto_pose_topic", "amcl_pose");
     auto_pose_type_  = nh_->declare_parameter<std::string>("auto_pose_type", "geometry_msgs/msg/PoseWithCovarianceStamped");
     auto_min_distance_m_ = nh_->declare_parameter<double>("auto_min_distance", 1.0);
+
+    path_topic_ = nh_->declare_parameter<std::string>("path_topic", path_topic_);
+    path_interpolation_step_m_ = nh_->declare_parameter<double>("path_interpolation_step_m", path_interpolation_step_m_);
+    path_use_waypoint_orientation_ =
+      nh_->declare_parameter<bool>("path_use_waypoint_orientation", path_use_waypoint_orientation_);
+    publish_path_on_change_ = nh_->declare_parameter<bool>("publish_path_on_change", publish_path_on_change_);
+
+    follow_path_action_name_ =
+      nh_->declare_parameter<std::string>("follow_path_action_name", follow_path_action_name_);
+    follow_path_controller_id_ =
+      nh_->declare_parameter<std::string>("follow_path_controller_id", follow_path_controller_id_);
+    follow_path_goal_checker_id_ =
+      nh_->declare_parameter<std::string>("follow_path_goal_checker_id", follow_path_goal_checker_id_);
     param_cb_handle_ = nh_->add_on_set_parameters_callback(
         [this](const std::vector<rclcpp::Parameter> &params) {
             rcl_interfaces::msg::SetParametersResult result;
@@ -104,6 +132,17 @@ void WaypointEditorTool::onInitialize()
 
     nav_client_ = rclcpp_action::create_client<nav2_msgs::action::FollowWaypoints>(nh_, "follow_waypoints");
 
+    publish_path_service_ = nh_->create_service<std_srvs::srv::Trigger>(
+        "publish_path",
+        std::bind(&WaypointEditorTool::handlePublishPath, this, std::placeholders::_1, std::placeholders::_2));
+
+    execute_path_service_ = nh_->create_service<std_srvs::srv::Trigger>(
+        "execute_path",
+        std::bind(&WaypointEditorTool::handleExecutePath, this, std::placeholders::_1, std::placeholders::_2));
+
+    follow_path_client_ =
+      rclcpp_action::create_client<nav2_msgs::action::FollowPath>(nh_, follow_path_action_name_);
+
     auto_start_service_ = nh_->create_service<std_srvs::srv::Trigger>(
         "start_auto_waypoints",
         [this](const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/, std::shared_ptr<std_srvs::srv::Trigger::Response> res) {
@@ -124,6 +163,8 @@ void WaypointEditorTool::onInitialize()
     );
 
     line_pub_ = nh_->create_publisher<visualization_msgs::msg::Marker>("waypoint_line", 10);
+    path_pub_ = nh_->create_publisher<nav_msgs::msg::Path>(
+        path_topic_, rclcpp::QoS(1).transient_local().reliable());
     total_wp_dist_pub_ = nh_->create_publisher<std_msgs::msg::Float64>("total_wp_dist", 10);
     last_wp_dist_pub_  = nh_->create_publisher<std_msgs::msg::Float64>("last_wp_dist", 10);
     auto_distance_sub_ = nh_->create_subscription<std_msgs::msg::Float64>(
@@ -133,6 +174,16 @@ void WaypointEditorTool::onInitialize()
             RCLCPP_INFO(nh_->get_logger(), "Auto waypoint min distance set to %.3f m", auto_min_distance_m_);
         }
     );
+    
+    // Subscribe to path interpolation density from Panel ComboBox
+    auto path_density_sub = nh_->create_subscription<std_msgs::msg::Float64>(
+        "path_interpolation_density", rclcpp::QoS(1).transient_local(),
+        [this](std_msgs::msg::Float64::SharedPtr msg) {
+            path_interpolation_step_m_ = std::max(0.01, msg->data);
+            RCLCPP_INFO(nh_->get_logger(), "Path interpolation density set to %.2f m", path_interpolation_step_m_);
+        }
+    );
+    
     refreshAutoPoseSubscription();
 
     waypoint_sequence_.clear();
@@ -604,8 +655,169 @@ void WaypointEditorTool::publishLastWpsDist()
 void WaypointEditorTool::publishRangeMetrics()
 {
     publishLineMarker();
+    publishPath();
     publishTotalWpsDist();
     publishLastWpsDist();
+}
+
+bool WaypointEditorTool::buildPath(nav_msgs::msg::Path &path_msg, std::string &error) const
+{
+    path_msg = nav_msgs::msg::Path();
+
+    const auto &waypoints = waypoint_sequence_.waypoints();
+    if (waypoints.size() < 2) {
+        error = "Need at least 2 waypoints to build a path";
+        return false;
+    }
+
+    std::vector<geometry_msgs::msg::PoseStamped> wps_map;
+    wps_map.reserve(waypoints.size());
+    for (const auto &wp : waypoints) {
+        geometry_msgs::msg::PoseStamped pose_map;
+        if (!transformToMapFrame(wp.pose, pose_map)) {
+            error = "Failed to transform waypoint to map frame (frame_id=" + wp.pose.header.frame_id + ")";
+            return false;
+        }
+        pose_map.header.stamp = nh_->now();
+        pose_map.header.frame_id = "map";
+        wps_map.push_back(std::move(pose_map));
+    }
+
+    path_msg.header.stamp = nh_->now();
+    path_msg.header.frame_id = "map";
+
+    const double step = std::max(0.0, path_interpolation_step_m_);
+
+    auto setYaw = [](geometry_msgs::msg::Pose &pose, double yaw) {
+        tf2::Quaternion q;
+        q.setRPY(0.0, 0.0, yaw);
+        pose.orientation.x = 0.0;
+        pose.orientation.y = 0.0;
+        pose.orientation.z = q.z();
+        pose.orientation.w = q.w();
+    };
+
+    auto pushPose = [&](const geometry_msgs::msg::PoseStamped &p) {
+        geometry_msgs::msg::PoseStamped out = p;
+        out.header = path_msg.header;
+        path_msg.poses.push_back(std::move(out));
+    };
+
+    pushPose(wps_map.front());
+
+    for (size_t i = 0; i + 1 < wps_map.size(); ++i) {
+        const auto &a = wps_map[i];
+        const auto &b = wps_map[i + 1];
+
+        const double ax = a.pose.position.x;
+        const double ay = a.pose.position.y;
+        const double bx = b.pose.position.x;
+        const double by = b.pose.position.y;
+        const double dx = bx - ax;
+        const double dy = by - ay;
+        const double dist = std::hypot(dx, dy);
+
+        if (dist < 1e-9) {
+            continue;
+        }
+
+        const double yaw = std::atan2(dy, dx);
+
+        // No interpolation: just add the end waypoint.
+        if (step <= 1e-9 || dist <= step) {
+            geometry_msgs::msg::PoseStamped end_pose = b;
+            if (!path_use_waypoint_orientation_) {
+                setYaw(end_pose.pose, yaw);
+            }
+            pushPose(end_pose);
+            continue;
+        }
+
+        // Interpolate poses along the segment.
+        const int num_steps = static_cast<int>(std::floor(dist / step));
+        for (int s = 1; s <= num_steps; ++s) {
+            const double t = std::min(1.0, (s * step) / dist);
+
+            geometry_msgs::msg::PoseStamped p = a;
+            p.pose.position.x = ax + t * dx;
+            p.pose.position.y = ay + t * dy;
+            p.pose.position.z = 0.0;
+
+            if (t >= 1.0 - 1e-9 && path_use_waypoint_orientation_) {
+                p.pose.orientation = b.pose.orientation;
+            } else {
+                setYaw(p.pose, yaw);
+            }
+
+            // Avoid adding a point that duplicates the path tail.
+            const auto &tail = path_msg.poses.back().pose.position;
+            const double tail_dist = std::hypot(p.pose.position.x - tail.x, p.pose.position.y - tail.y);
+            if (tail_dist > 1e-6) {
+                pushPose(p);
+            }
+        }
+
+        // Ensure end point exists.
+        const auto &tail = path_msg.poses.back().pose.position;
+        const double tail_to_end = std::hypot(tail.x - bx, tail.y - by);
+        if (tail_to_end > 1e-6) {
+            geometry_msgs::msg::PoseStamped end_pose = b;
+            if (!path_use_waypoint_orientation_) {
+                setYaw(end_pose.pose, yaw);
+            }
+            pushPose(end_pose);
+        }
+    }
+
+    if (path_msg.poses.size() < 2) {
+        error = "Path has less than 2 poses after processing";
+        return false;
+    }
+
+    error.clear();
+    return true;
+}
+
+void WaypointEditorTool::publishPath(bool force)
+{
+    if (!path_pub_) {
+        return;
+    }
+    if (!force && !publish_path_on_change_) {
+        return;
+    }
+
+    nav_msgs::msg::Path path_msg;
+    std::string error;
+    if (!buildPath(path_msg, error)) {
+        return;
+    }
+
+    path_pub_->publish(path_msg);
+}
+
+void WaypointEditorTool::handlePublishPath(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> res)
+{
+    nav_msgs::msg::Path path_msg;
+    std::string error;
+    if (!buildPath(path_msg, error)) {
+        res->success = false;
+        res->message = error;
+        return;
+    }
+
+    if (!path_pub_) {
+        res->success = false;
+        res->message = "Path publisher not initialized";
+        return;
+    }
+
+    path_pub_->publish(path_msg);
+    res->success = true;
+    res->message = "Published path with " + std::to_string(path_msg.poses.size()) +
+      " poses on " + std::string(path_pub_->get_topic_name());
 }
 
 void WaypointEditorTool::commitWaypointChanges(int waypoint_index, bool snapshot_history)
@@ -730,8 +942,33 @@ void WaypointEditorTool::handleSaveWaypoints(const std::shared_ptr<std_srvs::srv
         return;
     }
 
+    // ===== 工业级路径: 自动保存插值后的路径到 wpfile 目录 =====
+    std::string auto_save_msg;
+    try {
+        // 获取 path_interpolation_step_m_ (从 ROS 参数或使用默认值)
+        double density = path_interpolation_step_m_;  // 默认 0.1m
+        
+        // 插值生成密集点
+        auto interpolated = interpolateWaypoints(waypoint_sequence_.waypoints(), density);
+        
+        // 生成自动保存路径
+        std::string auto_path = generateWpfilePath();
+        
+        // 保存插值后的路径为 JSON 格式
+        std::string auto_error;
+        if (io::WaypointJson::Save(interpolated, auto_path, auto_error)) {
+            auto_save_msg = "\nAuto-saved " + std::to_string(interpolated.size()) + 
+                           " interpolated points to:\n" + auto_path;
+            RCLCPP_INFO(nh_->get_logger(), "Auto-saved interpolated path to: %s", auto_path.c_str());
+        } else {
+            RCLCPP_WARN(nh_->get_logger(), "Failed to auto-save: %s", auto_error.c_str());
+        }
+    } catch (const std::exception& e) {
+        RCLCPP_WARN(nh_->get_logger(), "Auto-save failed: %s", e.what());
+    }
+
     res->success = true;
-    res->message = "Saved " + std::to_string(waypoint_sequence_.size()) + " waypoints to " + path;
+    res->message = "Saved " + std::to_string(waypoint_sequence_.size()) + " waypoints to " + path + auto_save_msg;
 }
 
 void WaypointEditorTool::handleLoadWaypoints(const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/, std::shared_ptr<std_srvs::srv::Trigger::Response> res)
@@ -812,11 +1049,18 @@ void WaypointEditorTool::handleClearWaypoints(const std::shared_ptr<std_srvs::sr
         nav_client_->async_cancel_goal(current_goal_handle_);
         current_goal_handle_.reset();
     }
+
+    if (current_path_goal_handle_ && follow_path_client_) {
+        RCLCPP_INFO(nh_->get_logger(), "Canceling ongoing path tracking...");
+        follow_path_client_->async_cancel_goal(current_path_goal_handle_);
+        current_path_goal_handle_.reset();
+    }
     
     waypoint_sequence_.clear();
     server_->clear();
     server_->applyChanges();
     publishLineMarker();
+    publishPath(true);
     res->success = true;
     res->message = "Waypoints cleared and navigation canceled";
 }
@@ -883,10 +1127,143 @@ void WaypointEditorTool::handleExecuteWaypoints(const std::shared_ptr<std_srvs::
   RCLCPP_INFO(nh_->get_logger(), "Sent %zu waypoints to Nav2", goal_msg.poses.size());
 }
 
+void WaypointEditorTool::handleExecutePath(
+  const std::shared_ptr<std_srvs::srv::Trigger::Request> /*req*/,
+  std::shared_ptr<std_srvs::srv::Trigger::Response> res)
+{
+  if (!follow_path_client_) {
+    res->success = false;
+    res->message = "FollowPath action client not initialized";
+    return;
+  }
+
+  nav_msgs::msg::Path path_msg;
+  std::string error;
+  if (!buildPath(path_msg, error)) {
+    res->success = false;
+    res->message = error;
+    return;
+  }
+
+  if (!follow_path_client_->wait_for_action_server(std::chrono::seconds(2))) {
+    res->success = false;
+    res->message = "Action server '" + follow_path_action_name_ + "' not available";
+    RCLCPP_ERROR(nh_->get_logger(), "Action server '%s' not available", follow_path_action_name_.c_str());
+    return;
+  }
+
+  auto goal_msg = nav2_msgs::action::FollowPath::Goal();
+  goal_msg.path = path_msg;
+  goal_msg.controller_id = follow_path_controller_id_;
+  goal_msg.goal_checker_id = follow_path_goal_checker_id_;
+
+  auto send_goal_options = rclcpp_action::Client<nav2_msgs::action::FollowPath>::SendGoalOptions();
+
+  send_goal_options.goal_response_callback =
+    [this](const rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowPath>::SharedPtr & goal_handle) {
+      current_path_goal_handle_ = goal_handle;
+      if (!goal_handle) {
+        RCLCPP_ERROR(nh_->get_logger(), "FollowPath goal was rejected by server");
+      } else {
+        RCLCPP_INFO(nh_->get_logger(), "FollowPath goal accepted by server");
+      }
+    };
+
+  send_goal_options.result_callback =
+    [this](const rclcpp_action::ClientGoalHandle<nav2_msgs::action::FollowPath>::WrappedResult & result) {
+      current_path_goal_handle_.reset();
+      if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
+        RCLCPP_INFO(nh_->get_logger(), "Path tracking succeeded");
+      } else if (result.code == rclcpp_action::ResultCode::CANCELED) {
+        RCLCPP_INFO(nh_->get_logger(), "Path tracking canceled");
+      } else {
+        RCLCPP_ERROR(nh_->get_logger(), "Path tracking failed");
+      }
+    };
+
+  follow_path_client_->async_send_goal(goal_msg, send_goal_options);
+
+  // Publish for visualization / other consumers
+  if (path_pub_) {
+    path_pub_->publish(path_msg);
+  }
+
+  res->success = true;
+  res->message = "FollowPath goal sent with " + std::to_string(path_msg.poses.size()) + " poses";
+}
+
 void WaypointEditorTool::activate() {}
 void WaypointEditorTool::deactivate()
 {
     PoseTool::deactivate();
+}
+
+std::vector<Waypoint> WaypointEditorTool::interpolateWaypoints(
+    const std::vector<Waypoint>& waypoints, double density_m) const
+{
+    if (waypoints.size() < 2 || density_m <= 0.0) {
+        return waypoints;
+    }
+
+    std::vector<Waypoint> result;
+    result.push_back(waypoints.front());
+
+    for (std::size_t i = 1; i < waypoints.size(); ++i) {
+        const auto& prev = waypoints[i - 1];
+        const auto& curr = waypoints[i];
+
+        double dx = curr.pose.pose.position.x - prev.pose.pose.position.x;
+        double dy = curr.pose.pose.position.y - prev.pose.pose.position.y;
+        double dist = std::sqrt(dx * dx + dy * dy);
+
+        if (dist <= density_m) {
+            result.push_back(curr);
+            continue;
+        }
+
+        int num_segments = static_cast<int>(std::ceil(dist / density_m));
+        double step_x = dx / num_segments;
+        double step_y = dy / num_segments;
+
+        // Interpolate intermediate points
+        for (int j = 1; j < num_segments; ++j) {
+            Waypoint interp = prev;
+            interp.pose.pose.position.x = prev.pose.pose.position.x + step_x * j;
+            interp.pose.pose.position.y = prev.pose.pose.position.y + step_y * j;
+            interp.pose.header.stamp = nh_->now();
+            result.push_back(interp);
+        }
+        result.push_back(curr);
+    }
+
+    RCLCPP_INFO(nh_->get_logger(), "Interpolated %zu waypoints to %zu points (density: %.2f m)",
+                waypoints.size(), result.size(), density_m);
+    return result;
+}
+
+std::string WaypointEditorTool::generateWpfilePath() const
+{
+    // Get package share directory for wpfile
+    std::string pkg_share = ament_index_cpp::get_package_share_directory("waypoint_editor");
+    // Replace share with src path for editable files
+    std::string src_path = pkg_share;
+    auto pos = src_path.find("/install/");
+    if (pos != std::string::npos) {
+        src_path = src_path.substr(0, pos) + "/src/robot_app/waypoint_editor/wpfile";
+    } else {
+        src_path = pkg_share + "/wpfile";
+    }
+
+    // Create directory if it doesn't exist
+    std::filesystem::create_directories(src_path);
+
+    // Generate timestamp filename
+    auto now = std::chrono::system_clock::now();
+    auto time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&time_t), "%Y%m%d_%H%M%S");
+    
+    return src_path + "/" + ss.str() + ".json";
 }
 
 } // namespace waypoint_editor

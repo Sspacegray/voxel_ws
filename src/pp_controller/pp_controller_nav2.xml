@@ -1,0 +1,12 @@
+<class_libraries>
+  <library path="nav2_pp_controller">
+    <class
+      type="pp_controller::Nav2PurePursuitController"
+      base_class_type="nav2_core::Controller">
+      <description>
+        Lightweight Pure Pursuit controller plugin with a Nav2 RPP-like parameter surface.
+      </description>
+    </class>
+  </library>
+</class_libraries>
+

@@ -20,9 +20,39 @@ find_package(std_srvs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(nav2_core REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
 
 # Include directories
 include_directories(include)
+
+# Nav2 controller plugin library
+add_library(nav2_pp_controller SHARED
+  src/nav2_pure_pursuit_controller.cpp
+)
+
+ament_target_dependencies(nav2_pp_controller
+  rclcpp
+  rclcpp_lifecycle
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  pluginlib
+  nav2_core
+  nav2_util
+  nav2_costmap_2d
+)
+
+target_include_directories(nav2_pp_controller PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+pluginlib_export_plugin_description_file(nav2_core pp_controller_nav2.xml)
 
 # pp_node executable
 add_executable(pp_node
@@ -48,10 +78,22 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
+install(TARGETS
+  nav2_pp_controller
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 # Install directories
 install(DIRECTORY
   config
   launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(FILES
+  pp_controller_nav2.xml
   DESTINATION share/${PROJECT_NAME}
 )
 

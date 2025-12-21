@@ -38,6 +38,8 @@ protected Q_SLOTS:
     void onLoadWaypointsButtonClick();
     void onSaveWaypointsButtonClick();
     void onExecuteWaypointsButtonClick();
+    void onPublishPathButtonClick();
+    void onExecutePathButtonClick();
     void onUndoWaypointsButtonClick();
     void onRedoWaypointsButtonClick();
     void onClearWaypointsButtonClick();
@@ -61,6 +63,8 @@ private:
     QPushButton *load_waypoints_button_;
     QPushButton *save_waypoints_button_;
     QPushButton *execute_button_;
+    QPushButton *publish_path_button_;
+    QPushButton *execute_path_button_;
     QPushButton *undo_button_;
     QPushButton *redo_button_;
     QPushButton *clear_button_;
@@ -68,18 +72,22 @@ private:
     QDoubleSpinBox *auto_distance_spin_;
     QLineEdit *auto_topic_edit_;
     QComboBox *auto_type_combo_;
+    QComboBox *path_density_combo_;  // Path interpolation density (0.1-0.5m)
 
     rclcpp::Node::SharedPtr nh_;
     rclcpp::Client<nav2_msgs::srv::LoadMap>::SharedPtr load_map_client_;
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr save_client_;
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr load_client_;
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr execute_client_;
+    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr publish_path_client_;
+    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr execute_path_client_;
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr undo_client_;
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr redo_client_;
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr clear_client_;
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr auto_start_client_;
     rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr auto_stop_client_;
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr auto_distance_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr path_density_pub_;  // Path interpolation density
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr last_wp_dist_sub_;
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr total_wp_dist_sub_;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_pub_;

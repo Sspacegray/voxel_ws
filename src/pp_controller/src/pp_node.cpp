@@ -49,6 +49,7 @@ PPNode::PPNode(const rclcpp::NodeOptions& options)
     this->declare_parameter("spin_kp", 2.0);
     this->declare_parameter("control_rate", 20.0);
     this->declare_parameter("path_file", std::string(""));
+    this->declare_parameter("auto_start", false);  // 自动开始执行路径
     
     // === RPP 增强参数 ===
     this->declare_parameter("curvature_min_radius", 0.9);
@@ -180,6 +181,23 @@ PPNode::PPNode(const rclcpp::NodeOptions& options)
             path_task_ = PathParser::loadFromFile(path_file_);
             RCLCPP_INFO(this->get_logger(), "Loaded path with %zu segments", 
                         path_task_.paths.size());
+            
+            // 如果设置了 auto_start，自动开始执行
+            bool auto_start = this->get_parameter("auto_start").as_bool();
+            if (auto_start && !path_task_.paths.empty()) {
+                RCLCPP_INFO(this->get_logger(), "Auto-starting path execution...");
+                current_segment_idx_ = 0;
+                is_paused_ = false;
+                lateral_deviation_exceeded_ = false;
+                
+                const auto& first_segment = path_task_.paths[0];
+                if (first_segment.start_spin == 1) {
+                    target_yaw_ = PathParser::calculateTargetYaw(first_segment);
+                    state_ = ControllerState::SPINNING;
+                } else {
+                    state_ = ControllerState::LINE_TRACKING;
+                }
+            }
         } catch (const std::exception& e) {
             RCLCPP_WARN(this->get_logger(), "Failed to load path file: %s", e.what());
         }
@@ -405,6 +423,11 @@ void PPNode::controlLoop()
         cmd_vel_pub_->publish(stop_cmd);
         return;
     }
+
+    // 避免在 IDLE / COMPLETED 状态持续发布 0 速度，防止抢占其他控制器（如 Nav2）的 /cmd_vel
+    if (state_ == ControllerState::IDLE || state_ == ControllerState::COMPLETED) {
+        return;
+    }
     
     // 检查障碍物
     bool obstacle_stop = false;
@@ -436,9 +459,9 @@ void PPNode::controlLoop()
     switch (state_) {
         case ControllerState::IDLE:
         case ControllerState::COMPLETED:
-            cmd_vel.linear.x = 0.0;
-            cmd_vel.angular.z = 0.0;
-            break;
+            // P0-1 Fix: 在 IDLE/COMPLETED 状态不发布 cmd_vel，避免与 Nav2 冲突
+            // Do NOT publish cmd_vel when idle to avoid conflict with Nav2
+            return;
 
         case ControllerState::SPINNING:
         {
@@ -490,6 +513,9 @@ void PPNode::controlLoop()
                 if (current_segment_idx_ >= path_task_.paths.size()) {
                     state_ = ControllerState::COMPLETED;
                     RCLCPP_INFO(this->get_logger(), "All path segments completed!");
+                    // 发布一次停止，确保底盘不会保留上一帧速度
+                    cmd_vel.linear.x = 0.0;
+                    cmd_vel.angular.z = 0.0;
                 } else {
                     const auto& next_segment = path_task_.paths[current_segment_idx_];
                     if (next_segment.start_spin == 1) {
