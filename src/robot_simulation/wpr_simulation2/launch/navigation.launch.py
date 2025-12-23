@@ -23,7 +23,8 @@ from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
+from launch_ros.actions import Node, SetRemap
+from launch.actions import GroupAction
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
@@ -65,12 +66,17 @@ def generate_launch_description():
         'launch'
     )
 
-    navigation_cmd = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([nav2_launch_dir, '/bringup_launch.py']),
-        launch_arguments={
-            'map': map_file,
-            'use_sim_time': use_sim_time,
-            'params_file': params_file}.items(),
+    navigation_cmd = GroupAction(
+        actions=[
+            SetRemap(src='/cmd_vel', dst='/cmd_vel_engine'),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([nav2_launch_dir, '/bringup_launch.py']),
+                launch_arguments={
+                    'map': map_file,
+                    'use_sim_time': use_sim_time,
+                    'params_file': params_file}.items(),
+            )
+        ]
     )
 
     waypoint_editor_dir = get_package_share_directory('waypoint_editor')
@@ -111,31 +117,31 @@ def generate_launch_description():
     # ====== 设为 'true' 则启动时自动执行路径 ======
     declare_auto_start = DeclareLaunchArgument(
         'auto_start',
-        default_value='true',  # <-- 默认自动启动
+        default_value='false',  # <-- 默认不自动启动
         description='Auto-start path execution when waypoint_file is specified'
     )
     auto_start = LaunchConfiguration('auto_start')
 
     # PP Controller node (Industrial-grade path following)
-    pp_controller_cmd = Node(
-        package='pp_controller',
-        executable='pp_node',
-        name='pp_controller',
-        output='screen',
-        parameters=[{
-            'use_sim_time': True,
-            'path_file': waypoint_file,
-            'auto_start': auto_start,
-            'pose_source': 'tf',
-            'global_frame': 'map',
-            'base_frame': 'base_link',
-            'max_linear_vel': 0.3,
-            'max_angular_vel': 1.0,
-            'position_tolerance': 0.1,
-            'angle_tolerance': 0.1,
-            'obstacle_distance_threshold': 0.5,
-        }]
-    )
+    # pp_controller_cmd = Node(
+    #     package='pp_controller',
+    #     executable='pp_node',
+    #     name='pp_controller',
+    #     output='screen',
+    #     parameters=[{
+    #         'use_sim_time': True,
+    #         'path_file': waypoint_file,
+    #         'auto_start': auto_start,
+    #         'pose_source': 'tf',
+    #         'global_frame': 'map',
+    #         'base_frame': 'base_link',
+    #         'max_linear_vel': 0.3,
+    #         'max_angular_vel': 1.0,
+    #         'position_tolerance': 0.1,
+    #         'angle_tolerance': 0.1,
+    #         'obstacle_distance_threshold': 0.5,
+    #     }]
+    # )
 
     ld = LaunchDescription()
 
@@ -147,6 +153,8 @@ def generate_launch_description():
     ld.add_action(navigation_cmd)
     ld.add_action(rviz_cmd)
     ld.add_action(trajectory_recorder_cmd)
-    ld.add_action(pp_controller_cmd)
+    # ld.add_action(pp_controller_cmd)
+
+    return ld
 
     return ld

@@ -54,7 +54,7 @@ class TrajectoryRecorder(Node):
         self.declare_parameter('global_frame', 'map')
         self.declare_parameter('robot_frame', 'base_link')
         self.declare_parameter('tf_sample_rate', 10.0)  # Hz for TF sampling
-        self.declare_parameter('use_sim_time', True)
+        # self.declare_parameter('use_sim_time', True)
         
         self.pose_source = self.get_parameter('pose_source').value
         self.pose_topic = self.get_parameter('pose_topic').value

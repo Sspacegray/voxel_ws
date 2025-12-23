@@ -114,6 +114,10 @@ void WaypointEditorTool::onInitialize()
         "save_waypoints",
         std::bind(&WaypointEditorTool::handleSaveWaypoints, this, _1, _2)
     );
+    load_service_ = nh_->create_service<std_srvs::srv::Trigger>(
+        "load_waypoints",
+        std::bind(&WaypointEditorTool::handleLoadWaypoints, this, _1, _2)
+    );
     undo_service_ = nh_->create_service<std_srvs::srv::Trigger>(
         "undo_waypoints",
         std::bind(&WaypointEditorTool::handleUndoWaypoints, this, _1, _2)
@@ -883,7 +887,7 @@ bool WaypointEditorTool::requestFilePathForLoading(std::string &path, bool &load
         nullptr,
         tr("Open Waypoints"),
         "",
-        tr("CSV Files (*.csv);;YAML Files (*.yaml)"),
+        tr("All Supported (*.csv *.yaml *.json *.txt);;CSV Files (*.csv);;YAML Files (*.yaml);;JSON Path (*.json *.txt)"),
         &selected_filter
     );
     if (qpath.isEmpty()) {
@@ -984,14 +988,25 @@ void WaypointEditorTool::handleLoadWaypoints(const std::shared_ptr<std_srvs::srv
     std::vector<Waypoint> loaded;
     std::string error;
     bool ok = false;
-    if (load_yaml) {
+    
+    // Check extension
+    auto lower_path = path;
+    std::transform(lower_path.begin(), lower_path.end(), lower_path.begin(), ::tolower);
+    auto endsWith = [](const std::string& str, const std::string& suffix) {
+        if (suffix.size() > str.size()) return false;
+        return str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+    };
+
+    if (endsWith(lower_path, ".json") || endsWith(lower_path, ".txt")) {
+        ok = io::WaypointJson::Load(path, loaded, error);
+    } else if (load_yaml) {
         ok = io::WaypointYaml::Load(path, loaded, error);
     } else {
         ok = io::WaypointCsv::Load(path, loaded, error);
     }
 
     if (!ok) {
-        QMessageBox::warning(nullptr, tr("Error"), tr("Cannot open file:\n%1").arg(QString::fromStdString(path)));
+        QMessageBox::warning(nullptr, tr("Error"), tr("Cannot open file:\n%1\n%2").arg(QString::fromStdString(path)).arg(QString::fromStdString(error)));
         res->success = false;
         res->message = error;
         return;

@@ -3,7 +3,7 @@ amcl:
     use_sim_time: True
     set_initial_pose: true
     initial_pose: 
-      x: -5.0
+      x: -6.0
       y: -0.5
       z: 0.0
       yaw: 0.0
@@ -128,8 +128,8 @@ controller_server:
     # Progress checker parameters
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
-      movement_time_allowance: 10.0
+      required_movement_radius: 0.10
+      movement_time_allowance: 30.0
     # Goal checker parameters
     #precise_goal_checker:
     #  plugin: "nav2_controller::SimpleGoalChecker"
@@ -148,7 +148,13 @@ controller_server:
     
     # ========== 选项 1: Nav2 Regulated Pure Pursuit (默认推荐) ==========
     FollowPath:
-      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      plugin: "nav2_rotation_shim_controller::RotationShimController"
+      primary_controller: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+      angular_dist_threshold: 0.523
+      forward_sampling_distance: 0.5
+      rotate_to_heading_angular_vel: 1.8
+      max_angular_accel: 3.2
+      simulate_ahead_time: 1.0
       desired_linear_vel: 0.3
       lookahead_dist: 0.6
       min_lookahead_dist: 0.3
@@ -159,7 +165,7 @@ controller_server:
       use_velocity_scaled_lookahead_dist: true
       min_approach_linear_velocity: 0.05
       approach_velocity_scaling_dist: 0.6
-      use_rotate_to_heading: true
+      use_rotate_to_heading: false
       rotate_to_heading_min_angle: 0.785
       max_angular_accel: 3.2
       max_robot_pose_search_dist: 10.0
@@ -176,17 +182,18 @@ controller_server:
     # FollowPath:
     #   plugin: "pp_controller::Nav2PurePursuitController"
     #   desired_linear_vel: 0.3
-    #   lookahead_dist: 0.6
-    #   min_lookahead_dist: 0.3
+    #   lookahead_dist: 0.8
+    #   min_lookahead_dist: 0.5
     #   max_lookahead_dist: 0.9
     #   lookahead_time: 1.5
     #   rotate_to_heading_angular_vel: 1.8
     #   transform_tolerance: 0.1
     #   use_velocity_scaled_lookahead_dist: true
     #   min_approach_linear_velocity: 0.05
-    #   use_rotate_to_heading: true
+    #   use_rotate_to_heading: false
     #   rotate_to_heading_min_angle: 0.785
     #   max_angular_accel: 3.2
+    #   max_angular_vel: 1.8
     
     # ========== 选项 3: DWB Local Planner ==========
     # FollowPath:

@@ -1,6 +1,8 @@
 #ifndef WAYPOINT_EDITOR__IO__WAYPOINT_JSON_HPP_
 #define WAYPOINT_EDITOR__IO__WAYPOINT_JSON_HPP_
 
+#include <yaml-cpp/yaml.h>
+
 #include <string>
 #include <vector>
 #include "waypoint_editor/core/waypoint.hpp"
@@ -47,9 +49,26 @@ public:
         double target_v = 0.5);
 
     /**
+     * @brief 从 JSON 路径文件加载 waypoints
+     * @param path 输入文件路径
+     * @param waypoints 输出 Waypoint 序列
+     * @param error 错误信息
+     * @return true 加载成功
+     */
+    static bool Load(
+        const std::string& path,
+        std::vector<Waypoint>& waypoints,
+        std::string& error);
+
+    /**
      * @brief 将米转换为毫米
      */
     static int metersToMm(double meters) { return static_cast<int>(meters * 1000.0); }
+    
+    /**
+     * @brief 将毫米转换为米
+     */
+    static double mmToMeters(int mm) { return static_cast<double>(mm) / 1000.0; }
 };
 
 }  // namespace waypoint_editor::io

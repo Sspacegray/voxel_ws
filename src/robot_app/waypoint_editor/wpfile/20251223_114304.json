@@ -1,0 +1,1629 @@
+{
+  "task_id": "path_20251223_114304",
+  "paths": [
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4995, "y": -491 },
+      "end_point": { "x": -4896, "y": -493 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4896, "y": -493 },
+      "end_point": { "x": -4796, "y": -494 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4796, "y": -494 },
+      "end_point": { "x": -4696, "y": -496 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4696, "y": -496 },
+      "end_point": { "x": -4596, "y": -497 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4596, "y": -497 },
+      "end_point": { "x": -4496, "y": -499 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4496, "y": -499 },
+      "end_point": { "x": -4396, "y": -500 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4396, "y": -500 },
+      "end_point": { "x": -4296, "y": -502 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4296, "y": -502 },
+      "end_point": { "x": -4196, "y": -503 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4196, "y": -503 },
+      "end_point": { "x": -4096, "y": -505 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -4096, "y": -505 },
+      "end_point": { "x": -3997, "y": -506 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3997, "y": -506 },
+      "end_point": { "x": -3897, "y": -508 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3897, "y": -508 },
+      "end_point": { "x": -3797, "y": -509 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3797, "y": -509 },
+      "end_point": { "x": -3697, "y": -511 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3697, "y": -511 },
+      "end_point": { "x": -3597, "y": -512 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3597, "y": -512 },
+      "end_point": { "x": -3497, "y": -514 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3497, "y": -514 },
+      "end_point": { "x": -3397, "y": -515 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3397, "y": -515 },
+      "end_point": { "x": -3297, "y": -517 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3297, "y": -517 },
+      "end_point": { "x": -3197, "y": -518 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3197, "y": -518 },
+      "end_point": { "x": -3098, "y": -520 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3098, "y": -520 },
+      "end_point": { "x": -2998, "y": -522 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2998, "y": -522 },
+      "end_point": { "x": -2898, "y": -523 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2898, "y": -523 },
+      "end_point": { "x": -2798, "y": -525 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2798, "y": -525 },
+      "end_point": { "x": -2698, "y": -526 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2698, "y": -526 },
+      "end_point": { "x": -2598, "y": -528 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2598, "y": -528 },
+      "end_point": { "x": -2498, "y": -529 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2498, "y": -529 },
+      "end_point": { "x": -2398, "y": -531 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2398, "y": -531 },
+      "end_point": { "x": -2299, "y": -532 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2299, "y": -532 },
+      "end_point": { "x": -2199, "y": -534 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2199, "y": -534 },
+      "end_point": { "x": -2099, "y": -535 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2099, "y": -535 },
+      "end_point": { "x": -1999, "y": -537 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1999, "y": -537 },
+      "end_point": { "x": -1899, "y": -538 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1899, "y": -538 },
+      "end_point": { "x": -1799, "y": -540 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1799, "y": -540 },
+      "end_point": { "x": -1699, "y": -541 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1699, "y": -541 },
+      "end_point": { "x": -1599, "y": -543 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1599, "y": -543 },
+      "end_point": { "x": -1499, "y": -544 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1499, "y": -544 },
+      "end_point": { "x": -1400, "y": -546 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1400, "y": -546 },
+      "end_point": { "x": -1300, "y": -547 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1300, "y": -547 },
+      "end_point": { "x": -1200, "y": -549 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1200, "y": -549 },
+      "end_point": { "x": -1100, "y": -550 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1100, "y": -550 },
+      "end_point": { "x": -1000, "y": -552 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -1000, "y": -552 },
+      "end_point": { "x": -900, "y": -553 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -900, "y": -553 },
+      "end_point": { "x": -800, "y": -555 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -800, "y": -555 },
+      "end_point": { "x": -700, "y": -556 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -700, "y": -556 },
+      "end_point": { "x": -600, "y": -558 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -600, "y": -558 },
+      "end_point": { "x": -501, "y": -559 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -501, "y": -559 },
+      "end_point": { "x": -401, "y": -561 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -401, "y": -561 },
+      "end_point": { "x": -301, "y": -562 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -301, "y": -562 },
+      "end_point": { "x": -201, "y": -564 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -201, "y": -564 },
+      "end_point": { "x": -101, "y": -565 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -101, "y": -565 },
+      "end_point": { "x": -102, "y": -466 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -102, "y": -466 },
+      "end_point": { "x": -104, "y": -367 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -104, "y": -367 },
+      "end_point": { "x": -105, "y": -268 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -105, "y": -268 },
+      "end_point": { "x": -106, "y": -169 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -106, "y": -169 },
+      "end_point": { "x": -108, "y": -70 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -108, "y": -70 },
+      "end_point": { "x": -109, "y": 28 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -109, "y": 28 },
+      "end_point": { "x": -110, "y": 127 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -110, "y": 127 },
+      "end_point": { "x": -112, "y": 226 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -112, "y": 226 },
+      "end_point": { "x": -113, "y": 325 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -113, "y": 325 },
+      "end_point": { "x": -115, "y": 424 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -115, "y": 424 },
+      "end_point": { "x": -116, "y": 524 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -116, "y": 524 },
+      "end_point": { "x": -117, "y": 623 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -117, "y": 623 },
+      "end_point": { "x": -119, "y": 722 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -119, "y": 722 },
+      "end_point": { "x": -120, "y": 821 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -120, "y": 821 },
+      "end_point": { "x": -121, "y": 920 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -121, "y": 920 },
+      "end_point": { "x": -123, "y": 1019 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -123, "y": 1019 },
+      "end_point": { "x": -124, "y": 1118 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -124, "y": 1118 },
+      "end_point": { "x": -125, "y": 1217 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -125, "y": 1217 },
+      "end_point": { "x": -127, "y": 1316 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -127, "y": 1316 },
+      "end_point": { "x": -128, "y": 1415 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -128, "y": 1415 },
+      "end_point": { "x": -129, "y": 1514 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -129, "y": 1514 },
+      "end_point": { "x": -131, "y": 1614 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -131, "y": 1614 },
+      "end_point": { "x": -132, "y": 1713 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -132, "y": 1713 },
+      "end_point": { "x": -133, "y": 1812 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -133, "y": 1812 },
+      "end_point": { "x": -135, "y": 1911 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -135, "y": 1911 },
+      "end_point": { "x": -136, "y": 2010 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -136, "y": 2010 },
+      "end_point": { "x": -137, "y": 2109 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -137, "y": 2109 },
+      "end_point": { "x": -139, "y": 2208 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -139, "y": 2208 },
+      "end_point": { "x": -140, "y": 2307 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -140, "y": 2307 },
+      "end_point": { "x": -141, "y": 2406 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -141, "y": 2406 },
+      "end_point": { "x": -143, "y": 2505 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -143, "y": 2505 },
+      "end_point": { "x": -144, "y": 2604 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -144, "y": 2604 },
+      "end_point": { "x": -146, "y": 2704 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -146, "y": 2704 },
+      "end_point": { "x": -147, "y": 2803 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -147, "y": 2803 },
+      "end_point": { "x": -148, "y": 2902 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -148, "y": 2902 },
+      "end_point": { "x": -150, "y": 3001 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -150, "y": 3001 },
+      "end_point": { "x": -151, "y": 3100 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -151, "y": 3100 },
+      "end_point": { "x": -152, "y": 3199 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -152, "y": 3199 },
+      "end_point": { "x": -53, "y": 3199 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -53, "y": 3199 },
+      "end_point": { "x": 45, "y": 3199 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 45, "y": 3199 },
+      "end_point": { "x": 144, "y": 3199 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 144, "y": 3199 },
+      "end_point": { "x": 243, "y": 3198 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 243, "y": 3198 },
+      "end_point": { "x": 342, "y": 3198 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 342, "y": 3198 },
+      "end_point": { "x": 441, "y": 3198 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 441, "y": 3198 },
+      "end_point": { "x": 540, "y": 3198 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 540, "y": 3198 },
+      "end_point": { "x": 639, "y": 3198 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 639, "y": 3198 },
+      "end_point": { "x": 738, "y": 3198 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 738, "y": 3198 },
+      "end_point": { "x": 838, "y": 3198 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 838, "y": 3198 },
+      "end_point": { "x": 937, "y": 3198 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 937, "y": 3198 },
+      "end_point": { "x": 1036, "y": 3198 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1036, "y": 3198 },
+      "end_point": { "x": 1135, "y": 3197 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1135, "y": 3197 },
+      "end_point": { "x": 1234, "y": 3197 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1234, "y": 3197 },
+      "end_point": { "x": 1333, "y": 3197 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1333, "y": 3197 },
+      "end_point": { "x": 1432, "y": 3197 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1432, "y": 3197 },
+      "end_point": { "x": 1531, "y": 3197 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1531, "y": 3197 },
+      "end_point": { "x": 1630, "y": 3197 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1630, "y": 3197 },
+      "end_point": { "x": 1729, "y": 3197 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1729, "y": 3197 },
+      "end_point": { "x": 1828, "y": 3197 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1828, "y": 3197 },
+      "end_point": { "x": 1927, "y": 3196 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1927, "y": 3196 },
+      "end_point": { "x": 2027, "y": 3196 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2027, "y": 3196 },
+      "end_point": { "x": 2126, "y": 3196 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2126, "y": 3196 },
+      "end_point": { "x": 2225, "y": 3196 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2225, "y": 3196 },
+      "end_point": { "x": 2324, "y": 3196 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2324, "y": 3196 },
+      "end_point": { "x": 2423, "y": 3196 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2423, "y": 3196 },
+      "end_point": { "x": 2522, "y": 3196 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2522, "y": 3196 },
+      "end_point": { "x": 2621, "y": 3196 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2621, "y": 3196 },
+      "end_point": { "x": 2720, "y": 3195 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2720, "y": 3195 },
+      "end_point": { "x": 2819, "y": 3195 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2819, "y": 3195 },
+      "end_point": { "x": 2918, "y": 3195 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2918, "y": 3195 },
+      "end_point": { "x": 3017, "y": 3195 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3017, "y": 3195 },
+      "end_point": { "x": 3116, "y": 3195 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3116, "y": 3195 },
+      "end_point": { "x": 3216, "y": 3195 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3216, "y": 3195 },
+      "end_point": { "x": 3315, "y": 3195 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3315, "y": 3195 },
+      "end_point": { "x": 3414, "y": 3195 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3414, "y": 3195 },
+      "end_point": { "x": 3513, "y": 3194 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3513, "y": 3194 },
+      "end_point": { "x": 3612, "y": 3194 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3612, "y": 3194 },
+      "end_point": { "x": 3711, "y": 3194 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3711, "y": 3194 },
+      "end_point": { "x": 3810, "y": 3194 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3810, "y": 3194 },
+      "end_point": { "x": 3909, "y": 3194 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3909, "y": 3194 },
+      "end_point": { "x": 4008, "y": 3194 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4008, "y": 3194 },
+      "end_point": { "x": 4008, "y": 3096 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4008, "y": 3096 },
+      "end_point": { "x": 4008, "y": 2998 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4008, "y": 2998 },
+      "end_point": { "x": 4008, "y": 2900 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4008, "y": 2900 },
+      "end_point": { "x": 4008, "y": 2802 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4008, "y": 2802 },
+      "end_point": { "x": 4009, "y": 2704 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 2704 },
+      "end_point": { "x": 4009, "y": 2606 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 2606 },
+      "end_point": { "x": 4009, "y": 2508 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 2508 },
+      "end_point": { "x": 4009, "y": 2410 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 2410 },
+      "end_point": { "x": 4009, "y": 2312 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 2312 },
+      "end_point": { "x": 4009, "y": 2214 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 2214 },
+      "end_point": { "x": 4009, "y": 2116 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 2116 },
+      "end_point": { "x": 4009, "y": 2018 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 2018 },
+      "end_point": { "x": 4009, "y": 1920 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 1920 },
+      "end_point": { "x": 4009, "y": 1822 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 1822 },
+      "end_point": { "x": 4009, "y": 1723 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 1723 },
+      "end_point": { "x": 4009, "y": 1625 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 1625 },
+      "end_point": { "x": 4009, "y": 1527 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 1527 },
+      "end_point": { "x": 4009, "y": 1429 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 1429 },
+      "end_point": { "x": 4009, "y": 1331 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 1331 },
+      "end_point": { "x": 4009, "y": 1233 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4009, "y": 1233 },
+      "end_point": { "x": 4010, "y": 1135 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4010, "y": 1135 },
+      "end_point": { "x": 4010, "y": 1037 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4010, "y": 1037 },
+      "end_point": { "x": 4010, "y": 939 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4010, "y": 939 },
+      "end_point": { "x": 4010, "y": 841 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4010, "y": 841 },
+      "end_point": { "x": 4010, "y": 743 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4010, "y": 743 },
+      "end_point": { "x": 4010, "y": 645 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4010, "y": 645 },
+      "end_point": { "x": 4010, "y": 547 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4010, "y": 547 },
+      "end_point": { "x": 4010, "y": 449 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4010, "y": 449 },
+      "end_point": { "x": 4010, "y": 351 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 4010, "y": 351 },
+      "end_point": { "x": 3911, "y": 349 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3911, "y": 349 },
+      "end_point": { "x": 3812, "y": 347 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3812, "y": 347 },
+      "end_point": { "x": 3713, "y": 345 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3713, "y": 345 },
+      "end_point": { "x": 3614, "y": 343 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3614, "y": 343 },
+      "end_point": { "x": 3515, "y": 341 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3515, "y": 341 },
+      "end_point": { "x": 3416, "y": 339 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3416, "y": 339 },
+      "end_point": { "x": 3317, "y": 337 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3317, "y": 337 },
+      "end_point": { "x": 3218, "y": 335 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3218, "y": 335 },
+      "end_point": { "x": 3119, "y": 333 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3119, "y": 333 },
+      "end_point": { "x": 3020, "y": 331 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 3020, "y": 331 },
+      "end_point": { "x": 2921, "y": 329 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2921, "y": 329 },
+      "end_point": { "x": 2822, "y": 327 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2822, "y": 327 },
+      "end_point": { "x": 2723, "y": 325 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2723, "y": 325 },
+      "end_point": { "x": 2624, "y": 323 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2624, "y": 323 },
+      "end_point": { "x": 2525, "y": 321 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2525, "y": 321 },
+      "end_point": { "x": 2426, "y": 319 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2426, "y": 319 },
+      "end_point": { "x": 2327, "y": 317 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2327, "y": 317 },
+      "end_point": { "x": 2228, "y": 315 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2228, "y": 315 },
+      "end_point": { "x": 2129, "y": 313 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2129, "y": 313 },
+      "end_point": { "x": 2030, "y": 311 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 2030, "y": 311 },
+      "end_point": { "x": 1931, "y": 309 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1931, "y": 309 },
+      "end_point": { "x": 1832, "y": 307 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1832, "y": 307 },
+      "end_point": { "x": 1733, "y": 305 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1733, "y": 305 },
+      "end_point": { "x": 1634, "y": 303 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1634, "y": 303 },
+      "end_point": { "x": 1535, "y": 301 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1535, "y": 301 },
+      "end_point": { "x": 1437, "y": 299 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1437, "y": 299 },
+      "end_point": { "x": 1338, "y": 297 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1338, "y": 297 },
+      "end_point": { "x": 1239, "y": 295 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1239, "y": 295 },
+      "end_point": { "x": 1140, "y": 293 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1140, "y": 293 },
+      "end_point": { "x": 1041, "y": 291 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 1041, "y": 291 },
+      "end_point": { "x": 942, "y": 289 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 942, "y": 289 },
+      "end_point": { "x": 843, "y": 287 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 843, "y": 287 },
+      "end_point": { "x": 744, "y": 285 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 744, "y": 285 },
+      "end_point": { "x": 645, "y": 283 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 645, "y": 283 },
+      "end_point": { "x": 546, "y": 281 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 546, "y": 281 },
+      "end_point": { "x": 447, "y": 279 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 447, "y": 279 },
+      "end_point": { "x": 348, "y": 277 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 348, "y": 277 },
+      "end_point": { "x": 249, "y": 275 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 249, "y": 275 },
+      "end_point": { "x": 150, "y": 273 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 150, "y": 273 },
+      "end_point": { "x": 51, "y": 271 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 51, "y": 271 },
+      "end_point": { "x": -47, "y": 269 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -47, "y": 269 },
+      "end_point": { "x": -46, "y": 169 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -46, "y": 169 },
+      "end_point": { "x": -44, "y": 69 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -44, "y": 69 },
+      "end_point": { "x": -43, "y": -30 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -43, "y": -30 },
+      "end_point": { "x": -41, "y": -130 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -41, "y": -130 },
+      "end_point": { "x": -40, "y": -229 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -40, "y": -229 },
+      "end_point": { "x": -38, "y": -329 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -38, "y": -329 },
+      "end_point": { "x": -37, "y": -429 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -37, "y": -429 },
+      "end_point": { "x": -35, "y": -529 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -35, "y": -529 },
+      "end_point": { "x": -34, "y": -629 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -34, "y": -629 },
+      "end_point": { "x": -33, "y": -729 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -33, "y": -729 },
+      "end_point": { "x": -31, "y": -829 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -31, "y": -829 },
+      "end_point": { "x": -30, "y": -929 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -30, "y": -929 },
+      "end_point": { "x": -28, "y": -1029 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -28, "y": -1029 },
+      "end_point": { "x": -27, "y": -1128 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -27, "y": -1128 },
+      "end_point": { "x": -25, "y": -1228 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -25, "y": -1228 },
+      "end_point": { "x": -24, "y": -1328 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -24, "y": -1328 },
+      "end_point": { "x": -22, "y": -1428 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -22, "y": -1428 },
+      "end_point": { "x": -21, "y": -1528 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -21, "y": -1528 },
+      "end_point": { "x": -19, "y": -1628 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -19, "y": -1628 },
+      "end_point": { "x": -18, "y": -1728 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -18, "y": -1728 },
+      "end_point": { "x": -16, "y": -1828 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -16, "y": -1828 },
+      "end_point": { "x": -15, "y": -1928 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -15, "y": -1928 },
+      "end_point": { "x": -13, "y": -2028 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -13, "y": -2028 },
+      "end_point": { "x": -12, "y": -2127 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -12, "y": -2127 },
+      "end_point": { "x": -11, "y": -2227 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -11, "y": -2227 },
+      "end_point": { "x": -9, "y": -2327 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -9, "y": -2327 },
+      "end_point": { "x": -8, "y": -2427 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -8, "y": -2427 },
+      "end_point": { "x": -6, "y": -2527 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -6, "y": -2527 },
+      "end_point": { "x": -5, "y": -2627 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -5, "y": -2627 },
+      "end_point": { "x": -3, "y": -2727 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -3, "y": -2727 },
+      "end_point": { "x": -2, "y": -2827 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": -2, "y": -2827 },
+      "end_point": { "x": 0, "y": -2927 }
+    },
+    {
+      "dir": 1,
+      "target_v": 0.5,
+      "start_spin": 1,
+      "start_point": { "x": 0, "y": -2927 },
+      "end_point": { "x": 0, "y": -3026 }
+    }
+  ]
+}
