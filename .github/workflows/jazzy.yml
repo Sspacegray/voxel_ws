@@ -32,6 +32,8 @@ jobs:
         run: |
           git clone https://github.com/Livox-SDK/Livox-SDK2.git
           cd Livox-SDK2
+          # 修复头文件缺失导致的编译错误
+          sed -i '1i #include <cstdint>' sdk_core/comm/define.h
           mkdir build && cd build
           cmake .. && make -j$(nproc)
           sudo make install
