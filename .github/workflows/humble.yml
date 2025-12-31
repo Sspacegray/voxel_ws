@@ -24,9 +24,17 @@ jobs:
       - name: 安装依赖
         run: |
           apt-get update
-          apt-get install -y python3-pip
+          apt-get install -y python3-pip cmake
           rosdep update
           rosdep install --from-paths src --ignore-src -r -y || true
+
+      - name: 安装 Livox-SDK2
+        run: |
+          git clone https://github.com/Livox-SDK/Livox-SDK2.git
+          cd Livox-SDK2
+          mkdir build && cd build
+          cmake .. && make -j$(nproc)
+          sudo make install
       
       - name: 编译项目
         run: |
