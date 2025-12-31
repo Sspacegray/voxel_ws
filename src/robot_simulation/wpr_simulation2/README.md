@@ -57,6 +57,11 @@ ros2 launch wpr_simulation2 navigation.launch.py
 ros2 launch wpr_simulation2 integrated_waypoint_nav.launch.py
 ```
 
+集成启动（推荐：仿真 + Nav2 + RViz + half_structure 路网约束导航，不启动 route_server）:
+```
+ros2 launch wpr_simulation2 integrated_half_structure_nav.launch.py
+```
+
 控制器说明与替换:
 
 - 仿真默认使用的 Nav2 控制器在 `wpr_simulation2/config/nav2_params.yaml` 的

@@ -1,5 +1,8 @@
 # Voxel Robot Navigation System
 
+[![ROS2 Humble](https://github.com/Sspacegray/voxel_ws/actions/workflows/humble.yml/badge.svg)](https://github.com/Sspacegray/voxel_ws/actions/workflows/humble.yml)
+[![ROS2 Jazzy](https://github.com/Sspacegray/voxel_ws/actions/workflows/jazzy.yml/badge.svg)](https://github.com/Sspacegray/voxel_ws/actions/workflows/jazzy.yml)
+
 这是一个基于 ROS 2 (Jazzy) 的移动机器人自主导航与定位系统（项目早期在 Humble 上开发）。本项目集成了 Livox Mid360 激光雷达、Fast-LIO 里程计、Nav2 导航栈以及相关的硬件驱动和感知算法，提供了一套完整的建图、定位和导航解决方案。
 
 ## 目录

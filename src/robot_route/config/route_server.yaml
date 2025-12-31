@@ -7,7 +7,7 @@ route_server:
     graph_filepath: ""  # overridden by launch argument `graph`
     
     # 路径生成参数
-    path_density: 0.05                        # 生成密集路径的点间距 (m)
+    path_density: 0.5                        # 生成密集路径的点间距 (m)
     max_iterations: 0                         # 最大搜索迭代,0=无限
     max_planning_time: 2.0                    # 最大规划时间(s)
     smooth_corners: false                     # ✅ 禁用平滑转角（严格路网）

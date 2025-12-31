@@ -3,6 +3,8 @@ build/
 install/
 log/
 .colcon/
+fix/
+robot_simulation/
 
 # Python
 __pycache__/
@@ -29,6 +31,8 @@ venv/
 .serena/
 20251119_fast/
 .cache/
+tools/test_agent
+./github/workflows 
 
 # Large data files
 *.pcd

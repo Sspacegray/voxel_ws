@@ -35,6 +35,7 @@ install(PROGRAMS
   scripts/trajectory_recorder.py
   scripts/path_comparison.py
   scripts/auto_load_waypoints.py
+  scripts/json_to_geojson.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

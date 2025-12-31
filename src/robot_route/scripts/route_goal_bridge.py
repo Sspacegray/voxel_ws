@@ -62,7 +62,7 @@ class RouteGoalBridge(Node):
         # Parameters
         self.declare_parameter('first_mile_threshold', 0.5)  # m
         self.declare_parameter('last_mile_threshold', 0.5)   # m
-        self.declare_parameter('fallback_to_nav', True)      # 路网失败时回退到普通导航
+        self.declare_parameter('fallback_to_nav', False)      # 默认禁用回退，强制走路网
         
         self.is_navigating = False
         
@@ -141,6 +141,7 @@ class RouteGoalBridge(Node):
         # 1. 计算路网路径
         route_goal = ComputeRoute.Goal()
         route_goal.start = start_pose
+        route_goal.goal = goal_pose
         route_goal.goal = goal_pose
         route_goal.use_poses = True
         
