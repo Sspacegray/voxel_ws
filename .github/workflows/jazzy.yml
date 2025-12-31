@@ -1,4 +1,4 @@
-name: ROS2 Jazzy 自动化构建与测试
+name: ROS2 Jazzy 自动化构建与测试 (最终精简版)
 
 on:
   push:
