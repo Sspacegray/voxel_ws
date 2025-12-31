@@ -32,7 +32,7 @@ jobs:
       - name: 编译项目
         run: |
           source /opt/ros/humble/setup.bash
-          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-ignore livox_ros_driver2 lio_sam
+          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-ignore livox_ros_driver2 lio_sam icp_registration faster_lio fast_lio point_lio robot_base
       
       - name: 运行测试
         run: |
