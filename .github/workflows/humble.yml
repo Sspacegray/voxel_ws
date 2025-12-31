@@ -1,4 +1,4 @@
-name: ROS2 Humble CI
+name: ROS2 Humble 自动化构建与测试
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-and-test:
+    name: 编译与测试
     runs-on: ubuntu-22.04
     container:
       image: ros:humble-ros-base
@@ -17,28 +18,28 @@ jobs:
         shell: bash
 
     steps:
-      - name: Checkout code
+      - name: 拉取代码
         uses: actions/checkout@v4
       
-      - name: Install dependencies
+      - name: 安装依赖
         run: |
           apt-get update
           apt-get install -y python3-pip
           rosdep update
           rosdep install --from-paths src --ignore-src -r -y || true
       
-      - name: Build
+      - name: 编译项目
         run: |
           source /opt/ros/humble/setup.bash
           colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
       
-      - name: Test
+      - name: 运行测试
         run: |
           source /opt/ros/humble/setup.bash
           source install/setup.bash
           colcon test --return-code-on-test-failure
       
-      - name: Test Results
+      - name: 测试结果汇总
         if: always()
         run: |
           source /opt/ros/humble/setup.bash
