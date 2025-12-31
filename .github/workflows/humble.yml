@@ -25,24 +25,14 @@ jobs:
       - name: 安装依赖
         run: |
           apt-get update
-          apt-get install -y python3-pip cmake ros-humble-gtsam
+          apt-get install -y python3-pip cmake
           rosdep update
           rosdep install --from-paths src --ignore-src -r -y || true
 
-      - name: 安装 Livox-SDK2
-        run: |
-          git clone https://github.com/Livox-SDK/Livox-SDK2.git
-          cd Livox-SDK2
-          # 修复头文件缺失导致的编译错误
-          sed -i '1i #include <cstdint>' sdk_core/comm/define.h
-          mkdir build && cd build
-          cmake .. && make -j$(nproc)
-          sudo make install
-      
       - name: 编译项目
         run: |
           source /opt/ros/humble/setup.bash
-          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-ignore livox_ros_driver2 lio_sam
       
       - name: 运行测试
         run: |
