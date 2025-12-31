@@ -12,6 +12,10 @@ jobs:
     container:
       image: ros:humble-ros-base
     
+    defaults:
+      run:
+        shell: bash
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
