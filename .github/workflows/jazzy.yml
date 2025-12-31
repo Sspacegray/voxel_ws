@@ -5,6 +5,7 @@ on:
     branches: ['*']
   pull_request:
     branches: ['*']
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -24,7 +25,7 @@ jobs:
       - name: 安装依赖
         run: |
           apt-get update
-          apt-get install -y python3-pip cmake
+          apt-get install -y python3-pip cmake ros-jazzy-gtsam
           rosdep update
           rosdep install --from-paths src --ignore-src -r -y || true
 
