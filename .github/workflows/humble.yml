@@ -1,0 +1,49 @@
+name: ROS2 Humble 自动化构建与测试 (最终精简版)
+
+on:
+  push:
+    branches: ['*']
+  pull_request:
+    branches: ['*']
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: 编译与测试
+    runs-on: ubuntu-22.04
+    container:
+      image: ros:humble-ros-base
+    
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+      
+      - name: 安装依赖
+        run: |
+          apt-get update
+          apt-get install -y python3-pip cmake
+          rosdep update
+          rosdep install --from-paths src --ignore-src -r -y || true
+
+      - name: 编译项目
+        run: |
+          source /opt/ros/humble/setup.bash
+          # 使用 --packages-ignore 作为双重保险，虽然 COLCON_IGNORE 应该已经生效
+          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-ignore livox_ros_driver2 lio_sam icp_registration faster_lio fast_lio point_lio robot_base
+      
+      - name: 运行测试
+        run: |
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
+          colcon test --return-code-on-test-failure
+      
+      - name: 测试结果汇总
+        if: always()
+        run: |
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
+          colcon test-result --verbose
