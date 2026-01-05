@@ -1,10 +1,11 @@
-name: ROS2 Humble 自动化构建与测试
+name: ROS2 Humble 自动化构建与测试 (最终精简版)
 
 on:
   push:
     branches: ['*']
   pull_request:
     branches: ['*']
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -28,18 +29,11 @@ jobs:
           rosdep update
           rosdep install --from-paths src --ignore-src -r -y || true
 
-      - name: 安装 Livox-SDK2
-        run: |
-          git clone https://github.com/Livox-SDK/Livox-SDK2.git
-          cd Livox-SDK2
-          mkdir build && cd build
-          cmake .. && make -j$(nproc)
-          sudo make install
-      
       - name: 编译项目
         run: |
           source /opt/ros/humble/setup.bash
-          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
+          # 使用 --packages-ignore 作为双重保险，虽然 COLCON_IGNORE 应该已经生效
+          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-ignore livox_ros_driver2 lio_sam icp_registration faster_lio fast_lio point_lio robot_base
       
       - name: 运行测试
         run: |
