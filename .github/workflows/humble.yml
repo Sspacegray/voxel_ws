@@ -33,7 +33,7 @@ jobs:
         run: |
           source /opt/ros/humble/setup.bash
           # 使用 --packages-ignore 作为双重保险，虽然 COLCON_IGNORE 应该已经生效
-          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-ignore livox_ros_driver2 lio_sam icp_registration faster_lio fast_lio point_lio robot_base
+          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-ignore livox_ros_driver2 lio_sam icp_registration faster_lio fast_lio point_lio robot_base costmap_converter
       
       - name: 运行测试
         run: |
