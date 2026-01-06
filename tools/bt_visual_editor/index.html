@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>行为树可视化编辑器 | BT Visual Editor</title>
+  <meta name="description" content="Scratch-style Behavior Tree Visual Editor for ROS2 Navigation">
+  <link rel="stylesheet" href="/src/index.css">
+</head>
+
+<body>
+  <div id="app">
+    <!-- 顶部工具栏 -->
+    <header id="toolbar">
+      <div class="toolbar-left">
+        <h1>🌳 BT Editor</h1>
+        <span class="version">v1.0</span>
+      </div>
+      <div class="toolbar-center">
+        <button id="btn-new" class="toolbar-btn" title="新建">
+          <span class="icon">📄</span> 新建
+        </button>
+        <button id="btn-open" class="toolbar-btn" title="打开">
+          <span class="icon">📂</span> 打开
+        </button>
+        <button id="btn-save" class="toolbar-btn" title="保存">
+          <span class="icon">💾</span> 保存
+        </button>
+        <div class="separator"></div>
+        <button id="btn-export" class="toolbar-btn primary" title="导出XML">
+          <span class="icon">📤</span> 导出XML
+        </button>
+        <button id="btn-import" class="toolbar-btn" title="导入XML">
+          <span class="icon">📥</span> 导入XML
+        </button>
+        <button id="btn-import-palette" class="toolbar-btn" title="导入节点描述（TreeNodesModel XML）">
+          <span class="icon">🧩</span> 导入节点库
+        </button>
+      </div>
+      <div class="toolbar-right">
+        <button id="btn-validate" class="toolbar-btn" title="验证行为树结构">
+          <span class="icon">✅</span> 验证
+        </button>
+        <span id="file-name">未命名.xml</span>
+        <button id="btn-help" class="toolbar-btn icon-only" title="帮助">❓</button>
+      </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main id="main-content">
+      <!-- 左侧：Blockly积木块编辑区 -->
+      <section id="blockly-panel" class="panel">
+        <div class="panel-header">
+          <span>📦 积木块编辑器</span>
+        </div>
+        <div id="blockly-container"></div>
+      </section>
+
+      <!-- 中间：XML代码面板 -->
+      <section id="xml-panel" class="panel">
+        <div class="panel-header">
+          <span>📝 XML 代码</span>
+          <button id="btn-copy-xml" class="small-btn" title="复制">📋</button>
+        </div>
+        <div id="xml-container">
+          <pre id="xml-output"><code></code></pre>
+        </div>
+      </section>
+
+      <!-- 右侧：行为树图形可视化 -->
+      <section id="graph-panel" class="panel">
+        <div class="panel-header">
+          <span>🌲 行为树视图</span>
+          <div class="panel-actions">
+            <button id="btn-zoom-in" class="small-btn" title="放大">➕</button>
+            <button id="btn-zoom-out" class="small-btn" title="缩小">➖</button>
+            <button id="btn-zoom-fit" class="small-btn" title="适应">🔲</button>
+          </div>
+        </div>
+        <div id="graph-container">
+          <svg id="tree-svg"></svg>
+        </div>
+      </section>
+    </main>
+
+    <!-- 底部状态栏 -->
+    <footer id="statusbar">
+      <div class="status-left">
+        <span id="node-count">节点: 0</span>
+        <span class="separator">|</span>
+        <span id="validation-status" class="valid">✓ 有效</span>
+      </div>
+      <div class="status-right">
+        <span id="last-saved">未保存</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- 隐藏的文件输入 -->
+  <input type="file" id="file-input-xml" accept=".xml" style="display: none;">
+  <input type="file" id="file-input-project" accept=".json" style="display: none;">
+  <input type="file" id="file-input-palette" accept=".xml" style="display: none;">
+
+  <!-- 模态对话框 -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div id="modal" class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">对话框</h3>
+        <button id="modal-close" class="modal-close">×</button>
+      </div>
+      <div id="modal-content" class="modal-content"></div>
+      <div class="modal-footer">
+        <button id="modal-cancel" class="modal-btn">取消</button>
+        <button id="modal-confirm" class="modal-btn primary">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
