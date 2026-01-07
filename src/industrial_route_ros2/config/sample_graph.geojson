@@ -1,0 +1,28 @@
+{
+  "type": "FeatureCollection",
+  "name": "sample_graph",
+  "features": [
+    { "type": "Feature", "properties": { "id": 0, "frame": "map" },
+      "geometry": { "type": "Point", "coordinates": [0.0, 0.0] } },
+    { "type": "Feature", "properties": { "id": 1, "frame": "map" },
+      "geometry": { "type": "Point", "coordinates": [2.0, 0.0] } },
+    { "type": "Feature", "properties": { "id": 2, "frame": "map" },
+      "geometry": { "type": "Point", "coordinates": [2.0, 2.0] } },
+    { "type": "Feature", "properties": { "id": 3, "frame": "map" },
+      "geometry": { "type": "Point", "coordinates": [0.0, 2.0] } },
+
+    { "type": "Feature",
+      "properties": { "id": 0, "startid": 0, "endid": 1, "weight": 1.0, "bidirectional": true, "max_speed": 0.6 },
+      "geometry": { "type": "MultiLineString", "coordinates": [[[0.0,0.0],[2.0,0.0]]] } },
+    { "type": "Feature",
+      "properties": { "id": 1, "startid": 1, "endid": 2, "weight": 1.0, "bidirectional": true, "max_speed": 0.6 },
+      "geometry": { "type": "MultiLineString", "coordinates": [[[2.0,0.0],[2.0,2.0]]] } },
+    { "type": "Feature",
+      "properties": { "id": 2, "startid": 2, "endid": 3, "weight": 1.0, "bidirectional": true, "max_speed": 0.6 },
+      "geometry": { "type": "MultiLineString", "coordinates": [[[2.0,2.0],[0.0,2.0]]] } },
+    { "type": "Feature",
+      "properties": { "id": 3, "startid": 3, "endid": 0, "weight": 1.0, "bidirectional": true, "max_speed": 0.6 },
+      "geometry": { "type": "MultiLineString", "coordinates": [[[0.0,2.0],[0.0,0.0]]] } }
+  ]
+}
+

@@ -1,0 +1,13 @@
+string edge_id
+bool set_enabled
+bool enabled
+bool set_max_speed
+float64 max_speed
+bool set_bidirectional
+bool bidirectional
+bool set_weight
+float64 weight
+---
+bool success
+string error_msg
+

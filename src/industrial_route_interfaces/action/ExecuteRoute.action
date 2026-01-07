@@ -1,0 +1,16 @@
+# Goal: execute a route or path.
+nav_msgs/Path path
+bool use_path
+string[] node_sequence
+bool use_node_sequence
+bool rotate_in_place
+---
+bool success
+string error_code
+string error_msg
+---
+float32 progress
+geometry_msgs/PoseStamped current_pose
+string current_edge_id
+string current_node_id
+

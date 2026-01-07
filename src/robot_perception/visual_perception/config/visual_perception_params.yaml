@@ -1,0 +1,69 @@
+# ==============================================================================
+# Visual Perception Parameters
+# ==============================================================================
+# D435 depth camera visual perception configuration for obstacle avoidance
+# and road segmentation
+
+depth_processor:
+  ros__parameters:
+    # Depth range (meters)
+    min_depth: 0.2
+    max_depth: 5.0
+    
+    # Height range for obstacle detection (relative to camera)
+    min_height: 0.05    # Objects above 5cm from camera optical center
+    max_height: 1.5     # Objects below 1.5m from camera optical center
+    ground_height: 0.0  # Ground level relative to camera (m)
+    
+    # Filtering parameters
+    enable_filtering: true
+    filter_kernel_size: 5           # Median filter kernel (odd number)
+    bilateral_sigma_color: 75.0     # Bilateral filter color sigma
+    bilateral_sigma_space: 75.0     # Bilateral filter space sigma
+    
+    # Output frame for point cloud
+    output_frame: "base_link"
+
+depth_to_laser:
+  ros__parameters:
+    # Depth range (meters)
+    min_depth: 0.2
+    max_depth: 5.0
+    
+    # Scan height range (relative to camera optical center)
+    # Negative values are above optical center, positive are below
+    scan_height_min: -0.3   # Upper limit (30cm above optical center)
+    scan_height_max: 0.5    # Lower limit (50cm below optical center)
+    
+    # Output frame for laser scan
+    output_frame: "camera_link"
+    
+    # Scan timing
+    scan_time: 0.033        # ~30 Hz
+    
+    # Range handling
+    use_inf: true           # Use infinity for out-of-range readings
+    
+    # Performance
+    downsample_factor: 2    # Skip every N columns for faster processing
+
+road_segmentation:
+  ros__parameters:
+    # Depth range (meters)
+    min_depth: 0.2
+    max_depth: 5.0
+    
+    # RANSAC ground plane parameters
+    plane_distance_threshold: 0.03  # Distance threshold for inliers (m)
+    min_plane_points: 500           # Minimum points for valid ground plane
+    max_slope: 0.3                  # Maximum ground slope (tan value, ~17 deg)
+    ransac_max_iterations: 100      # RANSAC iterations
+    
+    # Point cloud processing
+    downsampling_resolution: 0.02   # Voxel grid resolution (m)
+    
+    # Color image usage (requires synced depth + color)
+    use_color: false
+    
+    # Output frame for visualization
+    output_frame: "camera_link"

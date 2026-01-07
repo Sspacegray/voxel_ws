@@ -1,0 +1,7 @@
+geometry_msgs/PoseStamped pose
+float64 max_dist
+---
+bool success
+string node_id
+float64 distance
+
