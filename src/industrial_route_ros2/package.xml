@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>industrial_route_ros2</name>
+  <version>0.1.0</version>
+  <description>ROS 2 nodes for industrial half-structured route navigation (Nav2-independent).</description>
+  <maintainer email="you@example.com">voxel_ws</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>std_srvs</depend>
+  <depend>visualization_msgs</depend>
+
+  <depend>industrial_route_interfaces</depend>
+  <depend>industrial_route_core</depend>
+
+</package>

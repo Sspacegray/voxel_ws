@@ -1,0 +1,26 @@
+industrial_route_server:
+  ros__parameters:
+    graph_geojson_path: ""
+    frame_id: "map"
+    base_frame_id: "base_link"
+    cmd_vel_topic: "/cmd_vel"
+    map_topic: "/map"
+    use_map_collision_check: false
+
+    planner:
+      connect_max_dist: 6.0
+      connect_k_nearest: 8
+      on_graph_max_dist: 0.8
+      densify_resolution: 0.2
+      use_edge_weight: true
+      use_max_speed_cost: false
+
+    controller:
+      max_linear_speed: 0.5
+      max_angular_speed: 1.2
+      lookahead_min: 0.4
+      lookahead_gain: 0.8
+      goal_pos_tolerance: 0.15
+      goal_yaw_tolerance: 0.25
+      rotate_in_place_yaw_threshold: 0.6
+      rotate_in_place_speed: 0.5

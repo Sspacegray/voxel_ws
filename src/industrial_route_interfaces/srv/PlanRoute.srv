@@ -1,0 +1,19 @@
+# Plan route using either poses or node IDs.
+# - If use_start_pose is true, start pose is used; otherwise start_node_id is used.
+# - If use_goal_pose is true, goal pose is used; otherwise goal_node_id is used.
+geometry_msgs/PoseStamped start
+geometry_msgs/PoseStamped goal
+string start_node_id
+string goal_node_id
+bool use_start_pose
+bool use_goal_pose
+---
+bool success
+string error_code
+string error_msg
+string[] node_sequence
+nav_msgs/Path dense_path
+nav_msgs/Path approach_path
+nav_msgs/Path departure_path
+float64 total_cost
+
