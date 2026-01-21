@@ -17,6 +17,13 @@ const state = {
   kinds: new Map()
 };
 
+const KIND_NAME_MAP = {
+  Control: 'Control 控制',
+  Decorator: 'Decorator 装饰',
+  Action: 'Action 动作',
+  Condition: 'Condition 条件'
+};
+
 function sanitizeId(id) {
   return String(id).replace(/[^a-zA-Z0-9_]/g, '_');
 }
@@ -69,6 +76,15 @@ function buildPortField(port) {
   return { fieldName, field: new Blockly.FieldTextInput(defaultPortValue(port)), label: port.name };
 }
 
+function escapeXmlAttr(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+}
+
 export function registerTreeNodesModelXml(xmlString, { generator, namespace = 'pal' } = {}) {
   if (!generator) throw new Error('registerTreeNodesModelXml: generator is required');
   if (!xmlString || !xmlString.trim()) return { added: 0, skipped: 0 };
@@ -116,24 +132,24 @@ export function registerTreeNodesModelXml(xmlString, { generator, namespace = 'p
         if (kind === 'Control') {
           this.appendStatementInput('CHILDREN')
             .setCheck(null)
-            .appendField('children');
+            .appendField('children 子节点');
         } else if (kind === 'Decorator') {
           this.appendStatementInput('CHILD')
             .setCheck(null)
-            .appendField('child');
+            .appendField('child 子节点');
         }
 
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(kindToColour(kind));
-        this.setTooltip(`${kind} node: ${id}`);
+        this.setTooltip(`${id} (${KIND_NAME_MAP[kind] || kind})`);
       }
     };
 
     generator.forBlock[blockType] = function (block, gen) {
       const name = (block.getFieldValue('NAME') || '').trim();
       const attrs = [];
-      if (name) attrs.push(`name="${name}"`);
+      if (name) attrs.push(`name="${escapeXmlAttr(name)}"`);
 
       for (const port of ports) {
         const fieldName = `PORT_${port.name}`;
@@ -148,7 +164,7 @@ export function registerTreeNodesModelXml(xmlString, { generator, namespace = 'p
         if (port.type === 'bool') {
           value = value === 'TRUE' ? 'true' : 'false';
         }
-        attrs.push(`${port.name}="${value}"`);
+        attrs.push(`${port.name}="${escapeXmlAttr(value)}"`);
       }
 
       const attrStr = attrs.length ? ` ${attrs.join(' ')}` : '';
@@ -157,10 +173,15 @@ export function registerTreeNodesModelXml(xmlString, { generator, namespace = 'p
       const childInput = kind === 'Control' ? 'CHILDREN' : (kind === 'Decorator' ? 'CHILD' : null);
       let children = '';
       if (isContainer && childInput) {
+        // Control: 可多子节点；Decorator: 只允许一个 child（避免生成非法 BT）
         let childBlock = block.getInputTargetBlock(childInput);
-        while (childBlock) {
-          children += gen.blockToCode(childBlock);
-          childBlock = childBlock.getNextBlock();
+        if (kind === 'Decorator') {
+          if (childBlock) children += gen.blockToCode(childBlock);
+        } else {
+          while (childBlock) {
+            children += gen.blockToCode(childBlock);
+            childBlock = childBlock.getNextBlock();
+          }
         }
       }
 
@@ -205,7 +226,7 @@ export function buildPaletteToolboxCategory({ name = 'Node Palette', colour = '#
     if (!items?.length) continue;
     contents.push({
       kind: 'category',
-      name: kind,
+      name: KIND_NAME_MAP[kind] || kind,
       colour,
       contents: items.map(it => ({ kind: 'block', type: it.blockType }))
     });

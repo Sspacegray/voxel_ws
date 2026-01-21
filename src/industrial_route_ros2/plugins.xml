@@ -1,0 +1,8 @@
+<library path="industrial_route_planner">
+  <class name="industrial_route_ros2/IndustrialRoutePlanner" type="industrial_route_ros2::IndustrialRoutePlanner" base_class_type="nav2_core::GlobalPlanner">
+    <description>
+      Global planner that uses industrial route network for path planning.
+      Calls industrial_route_server to compute approach + route + departure paths.
+    </description>
+  </class>
+</library>

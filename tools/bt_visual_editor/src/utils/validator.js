@@ -208,6 +208,14 @@ function validateBlock(block, issues, depth) {
                 suggestion: '装饰节点必须包含一个子节点'
             });
         } else {
+            // 装饰节点只能有一个 child，Blockly 的 statement input 可能被串多个块
+            if (childBlock.getNextBlock()) {
+                issues.push({
+                    level: ValidationLevel.WARNING,
+                    message: `装饰节点 "${displayName}" 的 child 中存在多个节点`,
+                    suggestion: '装饰节点只能包裹一个子节点；如需顺序执行多个节点，请在 child 中放入 Sequence 等控制节点'
+                });
+            }
             validateBlock(childBlock, issues, depth + 1);
         }
     }

@@ -12,7 +12,7 @@ import * as Blockly from 'blockly';
 Blockly.Blocks['bt_navigate_to_pose'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('NavigateToPose');
+            .appendField('NavigateToPose 导航到点');
         this.appendDummyInput()
             .appendField('goal 目标位姿')
             .appendField(new Blockly.FieldTextInput('{goal}'), 'GOAL');
@@ -39,7 +39,7 @@ Blockly.Blocks['bt_navigate_to_pose'] = {
 Blockly.Blocks['bt_navigate_through_poses'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('NavigateThroughPoses');
+            .appendField('NavigateThroughPoses 多点巡航');
         this.appendDummyInput()
             .appendField('goals 目标列表')
             .appendField(new Blockly.FieldTextInput('{goals}'), 'GOALS');
@@ -62,7 +62,7 @@ Blockly.Blocks['bt_navigate_through_poses'] = {
 Blockly.Blocks['bt_compute_path_to_pose'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('ComputePathToPose');
+            .appendField('ComputePathToPose 计算路径');
         this.appendDummyInput()
             .appendField('goal 目标位姿')
             .appendField(new Blockly.FieldTextInput('{goal}'), 'GOAL');
@@ -95,7 +95,7 @@ Blockly.Blocks['bt_compute_path_to_pose'] = {
 Blockly.Blocks['bt_follow_path'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('FollowPath');
+            .appendField('FollowPath 跟随路径');
         this.appendDummyInput()
             .appendField('path 输入路径')
             .appendField(new Blockly.FieldTextInput('{path}'), 'PATH');
@@ -129,7 +129,7 @@ Blockly.Blocks['bt_follow_path'] = {
 Blockly.Blocks['bt_compute_route'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('ComputeRoute');
+            .appendField('ComputeRoute 计算路由');
         this.appendDummyInput()
             .appendField('start_id 起点ID')
             .appendField(new Blockly.FieldTextInput('{start_id}'), 'START_ID');
@@ -160,7 +160,7 @@ Blockly.Blocks['bt_compute_route'] = {
 Blockly.Blocks['bt_compute_and_track_route'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('ComputeAndTrackRoute');
+            .appendField('ComputeAndTrackRoute 路网跟踪');
         this.appendDummyInput()
             .appendField('goal 目标位姿')
             .appendField(new Blockly.FieldTextInput('{goal}'), 'GOAL');
@@ -193,7 +193,7 @@ Blockly.Blocks['bt_compute_and_track_route'] = {
 Blockly.Blocks['bt_backup'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('BackUp');
+            .appendField('BackUp 后退');
         this.appendDummyInput()
             .appendField('backup_dist 后退距离(m)')
             .appendField(new Blockly.FieldNumber(0.3, 0.05, 2.0, 0.05), 'BACKUP_DIST');
@@ -217,7 +217,7 @@ Blockly.Blocks['bt_backup'] = {
 Blockly.Blocks['bt_spin'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('Spin');
+            .appendField('Spin 旋转');
         this.appendDummyInput()
             .appendField('spin_dist 旋转角度(rad)')
             .appendField(new Blockly.FieldNumber(1.57, -6.28, 6.28, 0.1), 'SPIN_DIST');
@@ -237,7 +237,7 @@ Blockly.Blocks['bt_spin'] = {
 Blockly.Blocks['bt_wait'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('Wait');
+            .appendField('Wait 等待');
         this.appendDummyInput()
             .appendField('wait_duration 等待时间(s)')
             .appendField(new Blockly.FieldNumber(5.0, 0.1, 600, 0.1), 'WAIT_DURATION');
@@ -257,7 +257,7 @@ Blockly.Blocks['bt_wait'] = {
 Blockly.Blocks['bt_clear_costmap'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('ClearEntireCostmap');
+            .appendField('ClearEntireCostmap 清图');
         this.appendDummyInput()
             .appendField('service_name 服务选择')
             .appendField(new Blockly.FieldDropdown([
@@ -281,7 +281,7 @@ Blockly.Blocks['bt_clear_costmap'] = {
 Blockly.Blocks['bt_dock_robot'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('DockRobot');
+            .appendField('DockRobot 对接充电');
         this.appendDummyInput()
             .appendField('dock_id 充电桩ID')
             .appendField(new Blockly.FieldTextInput('dock_1'), 'DOCK_ID');
@@ -305,7 +305,7 @@ Blockly.Blocks['bt_dock_robot'] = {
 Blockly.Blocks['bt_undock_robot'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('UndockRobot');
+            .appendField('UndockRobot 离开充电');
         this.appendDummyInput()
             .appendField('dock_type 充电桩类型')
             .appendField(new Blockly.FieldTextInput(''), 'DOCK_TYPE');
@@ -325,7 +325,7 @@ Blockly.Blocks['bt_undock_robot'] = {
 Blockly.Blocks['bt_smooth_path'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('SmoothPath');
+            .appendField('SmoothPath 路径平滑');
         this.appendDummyInput()
             .appendField('unsmoothed_path 原始路径')
             .appendField(new Blockly.FieldTextInput('{path}'), 'UNSMOOTHED_PATH');
@@ -352,7 +352,7 @@ Blockly.Blocks['bt_smooth_path'] = {
 Blockly.Blocks['bt_truncate_path'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('TruncatePath');
+            .appendField('TruncatePath 路径截断');
         this.appendDummyInput()
             .appendField('input_path 输入路径')
             .appendField(new Blockly.FieldTextInput('{path}'), 'INPUT_PATH');
@@ -378,7 +378,7 @@ Blockly.Blocks['bt_truncate_path'] = {
 Blockly.Blocks['bt_reinitialize_localization'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('ReinitializeGlobalLocalization');
+            .appendField('ReinitializeGlobalLocalization 重定位');
         this.appendDummyInput()
             .appendField('service_name 服务名')
             .appendField(new Blockly.FieldTextInput('reinitialize_global_localization'), 'SERVICE_NAME');
@@ -398,7 +398,7 @@ Blockly.Blocks['bt_reinitialize_localization'] = {
 Blockly.Blocks['bt_controller_selector'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('ControllerSelector');
+            .appendField('ControllerSelector 控制器选择');
         this.appendDummyInput()
             .appendField('default_controller 默认')
             .appendField(new Blockly.FieldDropdown([
@@ -432,7 +432,7 @@ Blockly.Blocks['bt_controller_selector'] = {
 Blockly.Blocks['bt_planner_selector'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('PlannerSelector');
+            .appendField('PlannerSelector 规划器选择');
         this.appendDummyInput()
             .appendField('default_planner 默认')
             .appendField(new Blockly.FieldDropdown([
@@ -459,4 +459,21 @@ Blockly.Blocks['bt_planner_selector'] = {
     }
 };
 
+// ========================================
+// AlwaysSuccess - 总是成功
+// ========================================
+Blockly.Blocks['bt_always_success'] = {
+    init: function () {
+        this.appendDummyInput()
+            .appendField('AlwaysSuccess 总是成功');
+        this.setPreviousStatement(true, null);
+        this.setNextStatement(true, null);
+        this.setColour(0);
+        this.setTooltip('AlwaysSuccess (总是成功)\n' +
+            '无论什么情况，返回 SUCCESS。\n' +
+            '常用于：忽略子节点失败，强制继续执行。');
+    }
+};
+
 export default Blockly.Blocks;
+

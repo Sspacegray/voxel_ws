@@ -25,8 +25,11 @@ import {
     registerTreeNodesModelXml
 } from './blockly/palette_registry.js';
 
-// 内置 Nav2 节点描述（也可导入自定义 TreeNodesModel XML）
-import nav2TreeNodesXml from '../../../src/nav2_main/nav2_behavior_tree/nav2_tree_nodes.xml?raw';
+// 内置节点库（最小子集），开箱即用；如需完整节点请用“导入节点库”
+import nav2TreeNodesXml from './assets/nav2_tree_nodes_min.xml?raw';
+
+// 内置 BT 模板
+import { BT_TEMPLATES } from './templates/bt_templates.js';
 
 // 导入可视化组件
 import { TreeVisualizer } from './visualization/tree_graph.js';
@@ -53,6 +56,11 @@ const appState = {
         loadedCount: 0
     }
 };
+
+const PANEL_SIZE_STORAGE_KEY = 'bt_visual_editor.panel_sizes.v1';
+const AI_BACKEND_URL_STORAGE_KEY = 'bt_visual_editor.ai_backend_url.v1';
+const DEFAULT_AI_BACKEND_URL = 'http://127.0.0.1:8787/generate';
+const CUSTOM_PALETTES_STORAGE_KEY = 'bt_visual_editor.custom_palettes.v1';
 
 // ========================================
 // 初始化 Blockly
@@ -118,10 +126,156 @@ function initBlockly() {
     });
 }
 
+function setPanelFlexBasis(panel, widthPx) {
+    if (!panel || !Number.isFinite(widthPx)) return;
+    // 允许在窗口变大时自适应拉伸，避免出现“右侧空一块”的未占用区域
+    panel.style.flex = `1 1 ${Math.round(widthPx)}px`;
+}
+
+function readPanelMinWidth(panel) {
+    if (!panel) return 200;
+    const cssMin = getComputedStyle(panel).minWidth;
+    const parsed = Number.parseFloat(cssMin);
+    return Number.isFinite(parsed) ? parsed : 200;
+}
+
+function savePanelSizes() {
+    const blocklyPanel = document.getElementById('blockly-panel');
+    const xmlPanel = document.getElementById('xml-panel');
+    const graphPanel = document.getElementById('graph-panel');
+    if (!blocklyPanel || !xmlPanel || !graphPanel) return;
+
+    const sizes = {
+        blockly: blocklyPanel.getBoundingClientRect().width,
+        xml: xmlPanel.getBoundingClientRect().width,
+        graph: graphPanel.getBoundingClientRect().width
+    };
+    try {
+        localStorage.setItem(PANEL_SIZE_STORAGE_KEY, JSON.stringify(sizes));
+    } catch {
+        // ignore
+    }
+}
+
+function loadPanelSizes() {
+    try {
+        const raw = localStorage.getItem(PANEL_SIZE_STORAGE_KEY);
+        if (!raw) return null;
+        const sizes = JSON.parse(raw);
+        if (!sizes) return null;
+        const blockly = Number(sizes.blockly);
+        const xml = Number(sizes.xml);
+        const graph = Number(sizes.graph);
+        if (![blockly, xml, graph].every(Number.isFinite)) return null;
+        return { blockly, xml, graph };
+    } catch {
+        return null;
+    }
+}
+
+function applyPanelSizes(sizes) {
+    const blocklyPanel = document.getElementById('blockly-panel');
+    const xmlPanel = document.getElementById('xml-panel');
+    const graphPanel = document.getElementById('graph-panel');
+    if (!blocklyPanel || !xmlPanel || !graphPanel) return;
+
+    setPanelFlexBasis(blocklyPanel, sizes.blockly);
+    setPanelFlexBasis(xmlPanel, sizes.xml);
+    setPanelFlexBasis(graphPanel, sizes.graph);
+
+    Blockly.svgResize(appState.workspace);
+    appState.visualizer?.resize?.();
+}
+
+function lockPanelSizesFromCurrentLayout() {
+    const blocklyPanel = document.getElementById('blockly-panel');
+    const xmlPanel = document.getElementById('xml-panel');
+    const graphPanel = document.getElementById('graph-panel');
+    if (!blocklyPanel || !xmlPanel || !graphPanel) return;
+
+    const sizes = {
+        blockly: blocklyPanel.getBoundingClientRect().width,
+        xml: xmlPanel.getBoundingClientRect().width,
+        graph: graphPanel.getBoundingClientRect().width
+    };
+    applyPanelSizes(sizes);
+}
+
+function initPanelResizers() {
+    const resizers = Array.from(document.querySelectorAll('.panel-resizer'));
+    if (!resizers.length) return;
+
+    const saved = loadPanelSizes();
+    // 先应用保存的尺寸；否则将初始布局锁定为 px，保证拖拽行为可预期
+    requestAnimationFrame(() => {
+        if (saved) {
+            applyPanelSizes(saved);
+        } else {
+            lockPanelSizesFromCurrentLayout();
+        }
+    });
+
+    const startDrag = (event, resizer, leftPanel, rightPanel) => {
+        if (!leftPanel || !rightPanel) return;
+        event.preventDefault();
+
+        resizer.classList.add('dragging');
+        resizer.setPointerCapture?.(event.pointerId);
+
+        const startX = event.clientX;
+        const startLeft = leftPanel.getBoundingClientRect().width;
+        const startRight = rightPanel.getBoundingClientRect().width;
+        const minLeft = readPanelMinWidth(leftPanel);
+        const minRight = readPanelMinWidth(rightPanel);
+
+        const onMove = (e) => {
+            const dx = e.clientX - startX;
+            let newLeft = startLeft + dx;
+            let newRight = startRight - dx;
+
+            // clamp
+            if (newLeft < minLeft) {
+                const diff = minLeft - newLeft;
+                newLeft = minLeft;
+                newRight = Math.max(minRight, newRight - diff);
+            } else if (newRight < minRight) {
+                const diff = minRight - newRight;
+                newRight = minRight;
+                newLeft = Math.max(minLeft, newLeft - diff);
+            }
+
+            setPanelFlexBasis(leftPanel, newLeft);
+            setPanelFlexBasis(rightPanel, newRight);
+
+            Blockly.svgResize(appState.workspace);
+            appState.visualizer?.resize?.();
+        };
+
+        const onUp = () => {
+            resizer.classList.remove('dragging');
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            savePanelSizes();
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp, { once: true });
+    };
+
+    for (const resizer of resizers) {
+        const leftSelector = resizer.getAttribute('data-left');
+        const rightSelector = resizer.getAttribute('data-right');
+        const leftPanel = leftSelector ? document.querySelector(leftSelector) : null;
+        const rightPanel = rightSelector ? document.querySelector(rightSelector) : null;
+
+        resizer.addEventListener('pointerdown', (e) => startDrag(e, resizer, leftPanel, rightPanel));
+    }
+}
+
 function updateToolbox() {
     if (!appState.workspace) return;
     const cfg = JSON.parse(JSON.stringify(toolboxConfig));
-    const paletteCategory = buildPaletteToolboxCategory({ name: 'Node Palette', colour: '#64748b' });
+    const paletteCategory = buildPaletteToolboxCategory({ name: 'Node Palette 节点库', colour: '#64748b' });
     if (paletteCategory) {
         cfg.contents.push({ kind: 'sep' }, paletteCategory);
     }
@@ -206,6 +360,58 @@ function updateXmlOutput() {
     updateNodeCount();
 }
 
+function collectExportedBlockIds(workspace) {
+    const exported = new Set();
+
+    const visitChildren = (block) => {
+        if (!block) return;
+
+        const childrenInput = block.getInput('CHILDREN');
+        if (childrenInput) {
+            const child = childrenInput.connection?.targetBlock();
+            if (child) visitChain(child);
+            return;
+        }
+
+        const childInput = block.getInput('CHILD');
+        if (childInput) {
+            // Decorator 语义：只允许一个 child，多余的 next sibling 不属于子树
+            const child = childInput.connection?.targetBlock();
+            if (child) {
+                exported.add(child.id);
+                visitChildren(child);
+            }
+        }
+    };
+
+    const visitChain = (block) => {
+        let cur = block;
+        while (cur) {
+            if (exported.has(cur.id)) break;
+            exported.add(cur.id);
+            visitChildren(cur);
+            cur = cur.getNextBlock();
+        }
+    };
+
+    const topBlocks = workspace.getTopBlocks(false) || [];
+    for (const top of topBlocks) {
+        visitChain(top);
+    }
+
+    return exported;
+}
+
+function countDecoratorMultiChildIssues(workspace) {
+    const decorators = workspace.getAllBlocks(false).filter(b => b.getInput('CHILD'));
+    let count = 0;
+    for (const deco of decorators) {
+        const child = deco.getInput('CHILD')?.connection?.targetBlock();
+        if (child && child.getNextBlock()) count++;
+    }
+    return count;
+}
+
 // ========================================
 // 更新节点计数
 // ========================================
@@ -214,7 +420,14 @@ function updateNodeCount() {
     if (!nodeCountEl || !appState.workspace) return;
 
     const blocks = appState.workspace.getAllBlocks(false);
-    nodeCountEl.textContent = `节点: ${blocks.length}`;
+    const exportedIds = collectExportedBlockIds(appState.workspace);
+    const unexported = Math.max(0, blocks.length - exportedIds.size);
+    const decoMultiChild = countDecoratorMultiChildIssues(appState.workspace);
+
+    let text = `节点: ${blocks.length} | 导出: ${exportedIds.size}`;
+    if (unexported > 0) text += ` | 未导出: ${unexported}`;
+    if (decoMultiChild > 0) text += ` | ⚠ 装饰节点多 child: ${decoMultiChild}`;
+    nodeCountEl.textContent = text;
 }
 
 // ========================================
@@ -240,12 +453,25 @@ function updateStatusBar() {
 
     if (validationEl) {
         const blocks = appState.workspace ? appState.workspace.getAllBlocks(false) : [];
-        if (blocks.length > 0) {
-            validationEl.textContent = '✓ 有效';
-            validationEl.className = 'valid';
-        } else {
+        if (blocks.length === 0) {
             validationEl.textContent = '○ 空';
             validationEl.className = '';
+            return;
+        }
+
+        const result = validateBehaviorTree(appState.workspace);
+        const errors = result.issues.filter(i => i.level === 'error').length;
+        const warnings = result.issues.filter(i => i.level === 'warning').length;
+
+        if (errors > 0) {
+            validationEl.textContent = `✗ 错误: ${errors}`;
+            validationEl.className = 'invalid';
+        } else if (warnings > 0) {
+            validationEl.textContent = `⚠ 警告: ${warnings}`;
+            validationEl.className = 'warning';
+        } else {
+            validationEl.textContent = '✓ 通过';
+            validationEl.className = 'valid';
         }
     }
 }
@@ -426,6 +652,13 @@ function handleHelp() {
       <li>中间面板实时显示生成的XML</li>
       <li>右侧面板显示行为树图形</li>
     </ol>
+
+    <h4>节点库（TreeNodesModel）</h4>
+    <ul>
+      <li>点击“导入节点库”导入 Groot/BT.CPP 的 <code>TreeNodesModel</code> XML 后，会自动生成可拖拽的积木块</li>
+      <li>导入完成后可选择“保存到本地”，下次打开页面会自动加载并出现在 <b>Node Palette</b> 中</li>
+      <li>需要管理/导出/删除已保存节点库：点击“节点库管理”（本地浏览器存储）</li>
+    </ul>
     
     <h4>快捷键</h4>
     <ul>
@@ -448,7 +681,271 @@ function handleHelp() {
       <li>点击"导入XML"按钮选择文件</li>
       <li>直接将XML文件拖拽到浏览器窗口</li>
     </ul>
+
+    <h4>诊断与警告</h4>
+    <ul>
+      <li>左下角“节点/导出/未导出/警告”可点击，打开详情并可定位到问题积木块</li>
+      <li>装饰节点（Decorator）只允许一个 child，多余连接会被标为“未导出”并提示修正</li>
+    </ul>
   `);
+}
+
+function escapeHtml(s) {
+    return String(s ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+function loadCustomPalettes() {
+    try {
+        const raw = localStorage.getItem(CUSTOM_PALETTES_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+            .filter(x => x && typeof x.xml === 'string' && typeof x.id === 'string')
+            .map(x => ({
+                id: String(x.id),
+                name: String(x.name || x.id),
+                xml: String(x.xml),
+                enabled: x.enabled !== false,
+                createdAt: Number(x.createdAt || Date.now())
+            }));
+    } catch {
+        return [];
+    }
+}
+
+function saveCustomPalettes(palettes) {
+    localStorage.setItem(CUSTOM_PALETTES_STORAGE_KEY, JSON.stringify(palettes));
+}
+
+function registerSavedPalettes() {
+    const palettes = loadCustomPalettes().filter(p => p.enabled);
+    if (!palettes.length) return { added: 0, skipped: 0, count: 0 };
+
+    let added = 0;
+    let skipped = 0;
+    for (const p of palettes) {
+        try {
+            const ns = `saved_${p.id}`;
+            const result = registerTreeNodesModelXml(p.xml, { generator: btXmlGenerator, namespace: ns });
+            added += result.added;
+            skipped += result.skipped;
+        } catch (err) {
+            console.warn('Saved palette load failed:', p.name, err);
+        }
+    }
+    return { added, skipped, count: palettes.length };
+}
+
+function downloadTextFile(fileName, text, mime = 'text/plain') {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function loadTemplate(template) {
+    if (!template?.xml) return;
+    if (appState.isModified) {
+        if (!confirm('当前项目未保存，确定要加载模板并覆盖当前内容吗？')) return;
+    }
+
+    const imported = importBehaviorTreeXmlToBlockly(template.xml);
+    if (!imported) {
+        showNotification('模板加载失败：模板 XML 无法转换为积木块', 'error');
+        return;
+    }
+
+    appState.currentFileName = template.fileName || `${template.id}.xml`;
+    appState.isModified = false;
+    appState.lastSavedTime = null;
+    updateStatusBar();
+    updateXmlOutput();
+    showNotification(`已加载模板：${template.name}`);
+}
+
+function handleTemplates() {
+    const itemsHtml = BT_TEMPLATES.map(t => {
+        return `
+          <div class="template-item" style="padding:10px;border:1px solid rgba(148,163,184,0.15);border-radius:8px;margin:8px 0;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+              <div style="min-width:0;">
+                <div style="font-weight:600;color:#e2e8f0;">${escapeHtml(t.name)}</div>
+                <div style="color:#94a3b8;font-size:12px;margin-top:4px;line-height:1.5;">${escapeHtml(t.description)}</div>
+              </div>
+              <button class="toolbar-btn" data-template-id="${escapeHtml(t.id)}" style="white-space:nowrap;">加载</button>
+            </div>
+          </div>
+        `;
+    }).join('');
+
+    showModal('内置模板', `
+      <div style="color:#94a3b8;font-size:12px;line-height:1.6;">
+        这些模板与当前编辑器内置节点/生成器兼容，可直接加载后修改。
+        <br/>提示：巡检模板里的 <code>{goals}</code> 需要运行时由任务节点或上游 BT 写入黑板。
+      </div>
+      <div style="margin-top:10px;">${itemsHtml}</div>
+    `);
+
+    // 绑定“加载”按钮
+    const container = document.getElementById('modal-content');
+    container?.querySelectorAll('[data-template-id]')?.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-template-id');
+            const tpl = BT_TEMPLATES.find(x => x.id === id);
+            if (!tpl) return;
+            hideModal();
+            loadTemplate(tpl);
+        });
+    });
+}
+
+function handleAiMission() {
+    const storedUrl = (() => {
+        try { return localStorage.getItem(AI_BACKEND_URL_STORAGE_KEY) || ''; } catch { return ''; }
+    })();
+    const defaultUrl = storedUrl || DEFAULT_AI_BACKEND_URL;
+
+    const optionsHtml = BT_TEMPLATES.map(t =>
+        `<option value="${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`
+    ).join('');
+
+    showModal('AI 任务生成（本地服务）', `
+      <div style="color:#94a3b8;font-size:12px;line-height:1.6;">
+        说明：此功能默认调用本地 HTTP 服务生成“任务计划 + BT XML + 巡检点”。不会在浏览器内直接访问外网。
+        <br/>后端接口约定：<code>POST</code> <code>/generate</code>，JSON 输入 <code>{ prompt, template_id }</code>，输出 <code>{ mission, bt_xml, waypoints_yaml }</code>。
+      </div>
+
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <label style="font-size:12px;color:#cbd5e1;">后端URL</label>
+        <input id="ai-backend-url" style="width:420px;max-width:100%;padding:6px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.2);background:#0b1220;color:#e2e8f0;"
+               value="${escapeHtml(defaultUrl)}" />
+        <label style="font-size:12px;color:#cbd5e1;">模板</label>
+        <select id="ai-template-id" style="padding:6px 8px;border-radius:6px;border:1px solid rgba(148,163,184,0.2);background:#0b1220;color:#e2e8f0;">
+          ${optionsHtml}
+        </select>
+        <button id="btn-ai-generate" class="toolbar-btn primary">生成</button>
+      </div>
+
+      <div style="margin-top:10px;">
+        <textarea id="ai-prompt" rows="6" style="width:100%;padding:10px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:#0b1220;color:#e2e8f0;resize:vertical;"
+          placeholder="例：在 map 坐标系做巡检。点位：A(1.2,0.3,90deg)、B(2.1,1.0,0deg)、C(0.5,2.0,-90deg)。循环 3 次；到点停留 10s 并触发拍照 action；失败重试 2 次，仍失败则跳过并记录。"></textarea>
+      </div>
+
+      <div id="ai-result" style="margin-top:12px;display:none;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+          <button id="btn-ai-apply-bt" class="toolbar-btn">应用 BT</button>
+          <button id="btn-ai-download-mission" class="toolbar-btn">下载 mission.json</button>
+          <button id="btn-ai-download-waypoints" class="toolbar-btn">下载 waypoints.yaml</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr;gap:10px;">
+          <div>
+            <div style="color:#cbd5e1;font-size:12px;margin-bottom:6px;">Mission（任务计划）</div>
+            <pre id="ai-mission-json" style="max-height:220px;overflow:auto;background:#0d1117;border:1px solid rgba(148,163,184,0.15);border-radius:8px;padding:10px;color:#7ee787;"></pre>
+          </div>
+          <div>
+            <div style="color:#cbd5e1;font-size:12px;margin-bottom:6px;">BT XML</div>
+            <pre id="ai-bt-xml" style="max-height:220px;overflow:auto;background:#0d1117;border:1px solid rgba(148,163,184,0.15);border-radius:8px;padding:10px;color:#7ee787;white-space:pre;"></pre>
+          </div>
+          <div>
+            <div style="color:#cbd5e1;font-size:12px;margin-bottom:6px;">Waypoints YAML</div>
+            <pre id="ai-waypoints-yaml" style="max-height:220px;overflow:auto;background:#0d1117;border:1px solid rgba(148,163,184,0.15);border-radius:8px;padding:10px;color:#7ee787;white-space:pre;"></pre>
+          </div>
+        </div>
+      </div>
+    `);
+
+    const resultState = { mission: null, btXml: '', waypointsYaml: '' };
+
+    const btnGen = document.getElementById('btn-ai-generate');
+    btnGen?.addEventListener('click', async () => {
+        const url = document.getElementById('ai-backend-url')?.value?.trim();
+        const prompt = document.getElementById('ai-prompt')?.value?.trim();
+        const templateId = document.getElementById('ai-template-id')?.value?.trim();
+
+        if (!url) {
+            showNotification('请输入后端URL', 'error');
+            return;
+        }
+        if (!prompt) {
+            showNotification('请输入任务描述', 'error');
+            return;
+        }
+
+        try { localStorage.setItem(AI_BACKEND_URL_STORAGE_KEY, url); } catch { /* ignore */ }
+
+        btnGen.disabled = true;
+        btnGen.textContent = '生成中...';
+
+        try {
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt, template_id: templateId })
+            });
+            if (!resp.ok) {
+                throw new Error(`HTTP ${resp.status}`);
+            }
+            const data = await resp.json();
+            resultState.mission = data.mission ?? null;
+            resultState.btXml = String(data.bt_xml ?? '');
+            resultState.waypointsYaml = String(data.waypoints_yaml ?? '');
+
+            const resultBox = document.getElementById('ai-result');
+            const missionEl = document.getElementById('ai-mission-json');
+            const btEl = document.getElementById('ai-bt-xml');
+            const wpEl = document.getElementById('ai-waypoints-yaml');
+            if (resultBox) resultBox.style.display = 'block';
+            if (missionEl) missionEl.textContent = resultState.mission ? JSON.stringify(resultState.mission, null, 2) : '(empty)';
+            if (btEl) btEl.textContent = resultState.btXml || '(empty)';
+            if (wpEl) wpEl.textContent = resultState.waypointsYaml || '(empty)';
+
+            showNotification('AI 任务生成完成');
+        } catch (err) {
+            console.error('AI generate failed:', err);
+            showNotification('生成失败：请检查本地后端服务是否启动 / CORS 是否允许', 'error');
+        } finally {
+            btnGen.disabled = false;
+            btnGen.textContent = '生成';
+        }
+    });
+
+    document.getElementById('btn-ai-apply-bt')?.addEventListener('click', () => {
+        if (!resultState.btXml?.trim()) {
+            showNotification('没有可用的 BT XML', 'error');
+            return;
+        }
+        hideModal();
+        const imported = importBehaviorTreeXmlToBlockly(resultState.btXml);
+        if (!imported) {
+            showNotification('BT 应用失败：XML 无法完整转换为积木块', 'error');
+            // 降级显示
+            const xmlOutput = document.querySelector('#xml-output code');
+            if (xmlOutput) xmlOutput.textContent = resultState.btXml;
+            appState.visualizer?.renderFromXml?.(resultState.btXml);
+            return;
+        }
+        appState.currentFileName = 'ai_generated.xml';
+        appState.isModified = true;
+        updateStatusBar();
+        updateXmlOutput();
+    });
+
+    document.getElementById('btn-ai-download-mission')?.addEventListener('click', () => {
+        downloadTextFile('mission.json', JSON.stringify(resultState.mission ?? {}, null, 2), 'application/json');
+    });
+
+    document.getElementById('btn-ai-download-waypoints')?.addEventListener('click', () => {
+        downloadTextFile('waypoints.yaml', resultState.waypointsYaml || '', 'text/yaml');
+    });
 }
 
 // ========================================
@@ -466,6 +963,98 @@ function handleValidate() {
     showModal('行为树验证报告', reportHtml);
 }
 
+function buildUnexportedReasonMap(workspace) {
+    const reasons = new Map(); // blockId -> reason string
+    const decorators = workspace.getAllBlocks(false).filter(b => b.getInput('CHILD'));
+    for (const deco of decorators) {
+        const child = deco.getInput('CHILD')?.connection?.targetBlock();
+        if (!child) continue;
+        let hidden = child.getNextBlock();
+        while (hidden) {
+            reasons.set(hidden.id, `该节点被串在装饰节点 "${getBlockLabel(deco)}" 的 child 下面。装饰节点只允许一个 child，请用 Sequence/Fallback 等控制节点包裹多个节点。`);
+            hidden = hidden.getNextBlock();
+        }
+    }
+    return reasons;
+}
+
+function getBlockLabel(block) {
+    if (!block) return '(unknown)';
+    const name = (block.getFieldValue?.('NAME') || '').trim();
+    return name ? `${name} (${block.type})` : block.type;
+}
+
+function handleStatusDiagnostics() {
+    if (!appState.workspace) {
+        showNotification('工作区未准备好', 'error');
+        return;
+    }
+
+    const result = validateBehaviorTree(appState.workspace);
+    const reportHtml = generateValidationReportHtml(result);
+
+    const blocks = appState.workspace.getAllBlocks(false);
+    const exportedIds = collectExportedBlockIds(appState.workspace);
+    const unexportedBlocks = blocks.filter(b => !exportedIds.has(b.id));
+    const decoMultiChild = countDecoratorMultiChildIssues(appState.workspace);
+    const reasons = buildUnexportedReasonMap(appState.workspace);
+
+    const statsHtml = `
+      <div style="margin-top:14px;padding:10px 12px;border:1px solid rgba(148,163,184,0.15);border-radius:8px;">
+        <div style="font-weight:600;margin-bottom:6px;">导出诊断</div>
+        <div style="color:#94a3b8;font-size:12px;line-height:1.6;">
+          节点总数: <b>${blocks.length}</b>，预计导出: <b>${exportedIds.size}</b>
+          ${unexportedBlocks.length ? `，未导出: <b style="color:#fbbf24;">${unexportedBlocks.length}</b>` : ''}
+          ${decoMultiChild ? `，装饰节点多 child: <b style="color:#fbbf24;">${decoMultiChild}</b>` : ''}
+        </div>
+        <div style="color:#94a3b8;font-size:12px;line-height:1.6;margin-top:6px;">
+          提示：未导出的节点通常是“没有连接到根”或“被装饰节点 child 串了多个 sibling（只会导出第一个）”。
+        </div>
+      </div>
+    `;
+
+    let unexportedHtml = '';
+    if (unexportedBlocks.length) {
+        const items = unexportedBlocks.slice(0, 20).map(b => {
+            const reason = reasons.get(b.id) || '该节点不在可导出子树中（可能未连接到根，或处于不被序列化的位置）。';
+            return `
+              <div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:8px 10px;border:1px solid rgba(148,163,184,0.12);border-radius:8px;">
+                <div style="min-width:0;">
+                  <div style="font-weight:500;">${escapeHtml(getBlockLabel(b))}</div>
+                  <div style="color:#94a3b8;font-size:12px;line-height:1.5;margin-top:4px;">${escapeHtml(reason)}</div>
+                </div>
+                <button class="toolbar-btn" data-focus-block-id="${escapeHtml(b.id)}" style="white-space:nowrap;">定位</button>
+              </div>
+            `;
+        }).join('');
+
+        const more = unexportedBlocks.length > 20 ? `<div style="color:#94a3b8;font-size:12px;margin-top:6px;">仅显示前 20 个，剩余 ${unexportedBlocks.length - 20} 个未展开。</div>` : '';
+
+        unexportedHtml = `
+          <div style="margin-top:14px;">
+            <div style="font-weight:600;margin-bottom:8px;">未导出节点列表</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">${items}</div>
+            ${more}
+          </div>
+        `;
+    }
+
+    showModal('警告/错误详情', `${reportHtml}${statsHtml}${unexportedHtml}`);
+
+    // 绑定“定位”按钮：选中并居中到对应 block
+    const container = document.getElementById('modal-content');
+    container?.querySelectorAll('[data-focus-block-id]')?.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-focus-block-id');
+            if (!id) return;
+            const block = appState.workspace.getBlockById(id);
+            if (!block) return;
+            block.select?.();
+            appState.workspace.centerOnBlock?.(id);
+        });
+    });
+}
+
 // 导入节点描述（TreeNodesModel XML）
 function handleImportPalette() {
     const input = document.getElementById('file-input-palette');
@@ -479,11 +1068,39 @@ function handleImportPalette() {
         reader.onload = (e) => {
             try {
                 const xml = e.target.result;
-                const namespace = `custom${Date.now()}`;
+                const id = String(Date.now());
+                const namespace = `saved_${id}`;
                 const result = registerTreeNodesModelXml(xml, { generator: btXmlGenerator, namespace });
                 appState.palette.loadedCount += result.added;
                 updateToolbox();
-                showNotification(`节点库已导入：新增 ${result.added}，跳过 ${result.skipped}`);
+
+                const shouldSave = confirm('节点库已导入。是否保存到本地（下次启动自动加载）？');
+                if (shouldSave) {
+                    const name = prompt('给这个节点库起个名字（用于下次识别）', file.name || `palette_${id}`) || (file.name || `palette_${id}`);
+                    const palettes = loadCustomPalettes();
+                    const normalizedXml = String(xml || '').trim();
+                    const exists = palettes.some(p => String(p.xml || '').trim() === normalizedXml);
+                    if (!exists) {
+                        palettes.push({ id, name, xml: normalizedXml, enabled: true, createdAt: Date.now() });
+                        try {
+                            saveCustomPalettes(palettes);
+                            showNotification(`节点库已保存：${name}`);
+                        } catch (err) {
+                            console.error('Failed to save palette:', err);
+                            showNotification('保存失败：浏览器存储空间不足（localStorage）', 'error');
+                        }
+                    } else {
+                        const openMgr = confirm('该节点库已存在（内容相同），未重复保存。\n是否打开“节点库管理”查看/启用？');
+                        if (openMgr) {
+                            hideModal();
+                            handleManagePalettes();
+                        } else {
+                            showNotification('该节点库已存在（内容相同），未重复保存', 'warning');
+                        }
+                    }
+                } else {
+                    showNotification(`节点库已导入（未保存）：新增 ${result.added}，跳过 ${result.skipped}`);
+                }
             } catch (err) {
                 console.error('Error importing palette:', err);
                 showNotification('导入节点库失败：无效的 TreeNodesModel XML', 'error');
@@ -496,16 +1113,105 @@ function handleImportPalette() {
     input.click();
 }
 
+function handleManagePalettes() {
+    const palettes = loadCustomPalettes();
+
+    const rows = palettes.length ? palettes.map(p => {
+        const sizeKb = Math.max(1, Math.round((p.xml.length || 0) / 1024));
+        const checked = p.enabled ? 'checked' : '';
+        return `
+          <div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px;border:1px solid rgba(148,163,184,0.12);border-radius:8px;margin:8px 0;">
+            <div style="min-width:0;">
+              <div style="font-weight:600;color:#e2e8f0;word-break:break-word;">${escapeHtml(p.name)}</div>
+              <div style="color:#94a3b8;font-size:12px;margin-top:4px;">id=${escapeHtml(p.id)} · ${sizeKb}KB</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+              <label style="display:flex;gap:6px;align-items:center;color:#cbd5e1;font-size:12px;">
+                <input type="checkbox" data-palette-toggle="${escapeHtml(p.id)}" ${checked}/>
+                启用
+              </label>
+              <button class="toolbar-btn" data-palette-export="${escapeHtml(p.id)}">导出</button>
+              <button class="toolbar-btn" data-palette-delete="${escapeHtml(p.id)}" style="border-color: rgba(239,68,68,0.4); color:#fecaca;">删除</button>
+            </div>
+          </div>
+        `;
+    }).join('') : `<div style="color:#94a3b8;font-size:12px;line-height:1.6;">暂无已保存的节点库。你可以先点击“导入节点库”，导入后选择保存。</div>`;
+
+    showModal('节点库管理（本地）', `
+      <div style="color:#94a3b8;font-size:12px;line-height:1.6;">
+        这些节点库保存在浏览器 localStorage 中。启用/删除后建议刷新页面让工具箱完全更新。
+      </div>
+      <div style="margin-top:10px;">${rows}</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+        <button id="btn-palettes-refresh" class="toolbar-btn">刷新页面生效</button>
+      </div>
+    `);
+
+    const container = document.getElementById('modal-content');
+
+    container?.querySelectorAll('[data-palette-toggle]')?.forEach(el => {
+        el.addEventListener('change', () => {
+            const id = el.getAttribute('data-palette-toggle');
+            if (!id) return;
+            const updated = loadCustomPalettes().map(p => p.id === id ? { ...p, enabled: el.checked } : p);
+            try {
+                saveCustomPalettes(updated);
+                showNotification('已保存设置：建议刷新页面使工具箱完全生效', 'info');
+            } catch {
+                showNotification('保存失败：浏览器存储空间不足（localStorage）', 'error');
+            }
+        });
+    });
+
+    container?.querySelectorAll('[data-palette-delete]')?.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-palette-delete');
+            if (!id) return;
+            if (!confirm('确定删除该节点库吗？（删除后不可恢复）')) return;
+            const updated = loadCustomPalettes().filter(p => p.id !== id);
+            try { saveCustomPalettes(updated); } catch { /* ignore */ }
+            hideModal();
+            handleManagePalettes();
+        });
+    });
+
+    container?.querySelectorAll('[data-palette-export]')?.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-palette-export');
+            if (!id) return;
+            const p = loadCustomPalettes().find(x => x.id === id);
+            if (!p) return;
+            downloadTextFile(`${p.name || 'palette'}.xml`, p.xml, 'application/xml');
+        });
+    });
+
+    document.getElementById('btn-palettes-refresh')?.addEventListener('click', () => {
+        if (appState.isModified) {
+            if (!confirm('当前项目未保存，刷新会丢失未保存修改，确定继续？')) return;
+        }
+        location.reload();
+    });
+}
+
 // ========================================
 // XML -> Blockly 导入
 // ========================================
 
 function importBehaviorTreeXmlToBlockly(xmlString) {
-    if (!appState.workspace) return false;
-    if (!xmlString || !xmlString.trim()) return false;
+    if (!appState.workspace) {
+        alert("错误: Blockly workspace 未初始化");
+        return false;
+    }
+    if (!xmlString || !xmlString.trim()) {
+        alert("错误: XML 内容为空");
+        return false;
+    }
 
     const parsed = parseBehaviorTreeXml(xmlString);
-    if (!parsed?.rootNode) return false;
+    if (!parsed?.rootNode) {
+        alert("错误: 无法解析 XML 或找不到 root/BehaviorTree 节点");
+        return false;
+    }
 
     // 记录 root 配置，导出时保持一致
     appState.bt.format = parsed.format ?? appState.bt.format;
@@ -516,7 +1222,10 @@ function importBehaviorTreeXmlToBlockly(xmlString) {
     appState.workspace.clear();
 
     const rootBlock = buildBlocksFromXmlElement(parsed.rootNode);
-    if (!rootBlock) return false;
+    if (!rootBlock) {
+        alert("错误: 无法从 XML 构建积木块 (rootBlock 为空)");
+        return false;
+    }
 
     // 顶层放置
     rootBlock.moveBy(40, 40);
@@ -654,7 +1363,8 @@ function mapXmlTagToBlockType(tagName) {
         'DistanceTraveled': 'bt_distance_traveled',
         'TransformAvailable': 'bt_transform_available',
         'WouldAControllerRecoveryHelp': 'bt_would_controller_recovery_help',
-        'WouldAPlannerRecoveryHelp': 'bt_would_planner_recovery_help'
+        'WouldAPlannerRecoveryHelp': 'bt_would_planner_recovery_help',
+        'AlwaysSuccess': 'bt_always_success'
     };
 
     return controlMap[tagName] || decoratorMap[tagName] || leafMap[tagName] || 'bt_unknown_node';
@@ -1010,49 +1720,65 @@ function setupDragAndDrop() {
 
     // 处理拖拽放置
     dropZone.addEventListener('drop', (e) => {
+        console.log('Drop event detected');
         dragCounter = 0;
         dropZone.classList.remove('drag-over');
 
         const files = e.dataTransfer?.files;
-        if (!files || files.length === 0) return;
+        if (!files || files.length === 0) {
+            alert('Drop detected but no files found!');
+            return;
+        }
+        alert(`Drop detected: ${files[0].name}`);
 
         const file = files[0];
-        if (!file.name.endsWith('.xml')) {
-            showNotification('请拖拽XML文件', 'error');
+        if (!file.name.endsWith('.xml') && !file.name.endsWith('.json')) {
+            showNotification('请拖拽XML或JSON文件', 'error');
             return;
         }
 
         const reader = new FileReader();
         reader.onload = (event) => {
+            alert('File read successfully');
             try {
-                const xmlContent = event.target.result;
+                const content = event.target.result;
+                let success = false;
 
-                // 尝试导入到Blockly
-                const imported = importBehaviorTreeXmlToBlockly(xmlContent);
+                if (file.name.endsWith('.json')) {
+                    const state = JSON.parse(content);
+                    appState.workspace.clear();
+                    Blockly.serialization.workspaces.load(state, appState.workspace);
+                    appState.currentFileName = file.name.replace('.json', '.xml');
+                    showNotification('项目已加载 (JSON)');
+                    success = true;
+                } else {
+                    // 默认 XML
+                    const imported = importBehaviorTreeXmlToBlockly(content);
+                    appState.currentFileName = file.name;
+                    if (imported) {
+                        showNotification('XML已导入');
+                        success = imported;
+                    } else {
+                        // 降级：仅可视化
+                        if (appState.visualizer) {
+                            appState.visualizer.renderFromXml(content);
+                        }
+                        const xmlOutput = document.querySelector('#xml-output code');
+                        if (xmlOutput) xmlOutput.textContent = content;
+                        showNotification('XML已导入（仅可视化）', 'warning');
+                        success = true; // 视为成功导入（虽然降级）
+                    }
+                }
 
-                // 更新文件名
-                appState.currentFileName = file.name;
-                updateStatusBar();
-
-                if (imported) {
+                if (success) {
                     appState.isModified = false;
                     appState.lastSavedTime = null;
+                    updateStatusBar();
                     updateXmlOutput();
-                    showNotification(`✓ 已导入: ${file.name}`);
-                } else {
-                    // 降级：仅可视化
-                    if (appState.visualizer) {
-                        appState.visualizer.renderFromXml(xmlContent);
-                    }
-                    const xmlOutput = document.querySelector('#xml-output code');
-                    if (xmlOutput) {
-                        xmlOutput.textContent = xmlContent;
-                    }
-                    showNotification('XML已导入（仅可视化）', 'warning');
                 }
             } catch (error) {
                 console.error('Error importing dropped file:', error);
-                showNotification('导入失败：无效的XML文件', 'error');
+                showNotification('导入失败：无效的文件', 'error');
             }
         };
         reader.readAsText(file);
@@ -1070,9 +1796,16 @@ function bindEvents() {
     document.getElementById('btn-export')?.addEventListener('click', handleExportXml);
     document.getElementById('btn-import')?.addEventListener('click', handleImportXml);
     document.getElementById('btn-import-palette')?.addEventListener('click', handleImportPalette);
+    document.getElementById('btn-manage-palettes')?.addEventListener('click', handleManagePalettes);
     document.getElementById('btn-copy-xml')?.addEventListener('click', handleCopyXml);
     document.getElementById('btn-validate')?.addEventListener('click', handleValidate);
     document.getElementById('btn-help')?.addEventListener('click', handleHelp);
+    document.getElementById('btn-templates')?.addEventListener('click', handleTemplates);
+    document.getElementById('btn-ai-mission')?.addEventListener('click', handleAiMission);
+
+    // 状态栏：点击查看警告/错误详情
+    document.getElementById('validation-status')?.addEventListener('click', handleStatusDiagnostics);
+    document.getElementById('node-count')?.addEventListener('click', handleStatusDiagnostics);
 
     // 拖拽导入XML文件
     setupDragAndDrop();
@@ -1115,7 +1848,12 @@ function bindEvents() {
             e.returnValue = '';
         }
     });
+
+    setupDragAndDrop();
 }
+
+
+
 
 // ========================================
 // 应用初始化
@@ -1132,7 +1870,19 @@ function init() {
     } catch (err) {
         console.warn('Nav2 palette load failed:', err);
     }
+
+    // 自动加载用户已保存的节点库（localStorage）
+    try {
+        const saved = registerSavedPalettes();
+        if (saved.count > 0) {
+            appState.palette.loadedCount += saved.added;
+            updateToolbox();
+        }
+    } catch (err) {
+        console.warn('Saved palettes load failed:', err);
+    }
     initVisualizer();
+    initPanelResizers();
     bindEvents();
     updateStatusBar();
 

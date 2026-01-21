@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<!--
+  内置 Nav2 节点库（最小子集）
+
+  目标：
+  - 让 bt_visual_editor 开箱即用（无需手动选择 /opt/ros/... 文件）
+  - 覆盖本工具内置模板与常用导航/恢复节点
+
+  说明：
+  - 这是 TreeNodesModel（Groot/BT.CPP）格式
+  - 如需完整 Nav2 节点，请使用界面“导入节点库”导入官方 nav2_tree_nodes.xml
+-->
+<root>
+  <TreeNodesModel>
+    <Action ID="NavigateToPose">
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">{goal}</input_port>
+      <input_port name="server_name" type="string">navigate_to_pose</input_port>
+      <input_port name="behavior_tree" type="string"></input_port>
+    </Action>
+
+    <Action ID="NavigateThroughPoses">
+      <input_port name="goals" type="nav2_msgs::action::NavigateThroughPoses_Goal">{goals}</input_port>
+      <input_port name="server_name" type="string">navigate_through_poses</input_port>
+    </Action>
+
+    <Action ID="ComputePathThroughPoses">
+      <input_port name="goals" type="nav2_msgs::action::NavigateThroughPoses_Goal">{goals}</input_port>
+      <input_port name="start" type="geometry_msgs::msg::PoseStamped"></input_port>
+      <input_port name="planner_id" type="string" default="GridBased">GridBased</input_port>
+      <input_port name="server_name" type="string"></input_port>
+      <input_port name="server_timeout" type="int"></input_port>
+      <output_port name="path" type="nav_msgs::msg::Path">{path}</output_port>
+    </Action>
+
+    <Action ID="RemovePassedGoals">
+      <input_port name="input_goals" type="nav2_msgs::action::NavigateThroughPoses_Goal">{goals}</input_port>
+      <input_port name="radius" type="double" default="0.7">0.7</input_port>
+      <input_port name="global_frame" type="string"></input_port>
+      <input_port name="robot_base_frame" type="string"></input_port>
+      <output_port name="output_goals" type="nav2_msgs::action::NavigateThroughPoses_Goal">{goals}</output_port>
+    </Action>
+
+    <Action ID="FollowPath">
+      <input_port name="path" type="nav_msgs::msg::Path">{path}</input_port>
+      <input_port name="controller_id" type="string" default="FollowPath">FollowPath</input_port>
+      <input_port name="goal_checker_id" type="string"></input_port>
+      <input_port name="error_code_id" type="string"></input_port>
+    </Action>
+
+    <Action ID="ComputeAndTrackRoute">
+      <input_port name="goal" type="geometry_msgs::msg::PoseStamped">{goal}</input_port>
+      <input_port name="use_start" type="bool" default="false">false</input_port>
+      <input_port name="use_poses" type="bool" default="true">true</input_port>
+      <output_port name="route" type="nav2_msgs::msg::Route">{route}</output_port>
+      <output_port name="path" type="nav_msgs::msg::Path">{path}</output_port>
+      <output_port name="rerouted" type="bool"></output_port>
+      <output_port name="execution_duration" type="builtin_interfaces::msg::Duration"></output_port>
+      <output_port name="last_node_id" type="uint16_t"></output_port>
+      <output_port name="next_node_id" type="uint16_t"></output_port>
+      <output_port name="current_edge_id" type="uint16_t"></output_port>
+      <input_port name="error_code_id" type="string"></input_port>
+    </Action>
+
+    <Action ID="ClearEntireCostmap">
+      <input_port name="service_name" type="string">global_costmap/clear_entirely_global_costmap</input_port>
+      <input_port name="server_timeout" type="int"></input_port>
+    </Action>
+
+    <Action ID="BackUp">
+      <input_port name="backup_dist" type="double">0.30</input_port>
+      <input_port name="backup_speed" type="double">0.15</input_port>
+    </Action>
+
+    <Action ID="Spin">
+      <input_port name="spin_dist" type="double">1.57</input_port>
+    </Action>
+
+    <Action ID="Wait">
+      <input_port name="wait_duration" type="double">5</input_port>
+    </Action>
+
+    <Action ID="DockRobot">
+      <input_port name="dock_id" type="string">dock_1</input_port>
+      <input_port name="navigate_to_staging_pose" type="bool" default="true">true</input_port>
+    </Action>
+
+    <Action ID="UndockRobot">
+      <input_port name="dock_type" type="string"></input_port>
+    </Action>
+
+    <Action ID="ControllerSelector">
+      <input_port name="selected_controller" type="string">{selected_controller}</input_port>
+      <input_port name="default_controller" type="string" default="FollowPath">FollowPath</input_port>
+      <input_port name="topic_name" type="string" default="controller_selector">controller_selector</input_port>
+    </Action>
+
+    <Condition ID="GoalUpdated"/>
+
+    <Condition ID="IsPathValid">
+      <input_port name="path" type="nav_msgs::msg::Path">{path}</input_port>
+      <input_port name="server_timeout" type="int"></input_port>
+    </Condition>
+
+    <Condition ID="IsBatteryLow">
+      <input_port name="min_battery" type="int">20</input_port>
+      <input_port name="battery_topic" type="string">battery_status</input_port>
+      <input_port name="is_voltage" type="bool" default="false">false</input_port>
+    </Condition>
+
+    <Decorator ID="RateController">
+      <input_port name="hz" type="double">0.5</input_port>
+    </Decorator>
+
+    <Decorator ID="Inverter"/>
+
+    <Decorator ID="GoalUpdatedController"/>
+
+    <Decorator ID="KeepRunningUntilFailure"/>
+
+    <Decorator ID="RetryUntilSuccessful">
+      <input_port name="num_attempts" type="int" default="1">1</input_port>
+    </Decorator>
+
+    <Decorator ID="PathLongerOnApproach">
+      <input_port name="path" type="nav_msgs::msg::Path">{path}</input_port>
+      <input_port name="prox_len" type="double" default="3.0">3.0</input_port>
+      <input_port name="length_factor" type="double" default="2.0">2.0</input_port>
+    </Decorator>
+
+    <Control ID="SequenceStar"/>
+
+    <Action ID="CancelControl">
+      <input_port name="server_name" type="string">controller_server</input_port>
+      <input_port name="server_timeout" type="int"></input_port>
+    </Action>
+
+    <Condition ID="GlobalUpdatedGoal"/>
+
+    <Condition ID="PathExpiringTimer">
+      <input_port name="seconds" type="double">10</input_port>
+      <input_port name="path" type="nav_msgs::msg::Path">{path}</input_port>
+    </Condition>
+  </TreeNodesModel>
+</root>

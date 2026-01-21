@@ -21,6 +21,13 @@ find_package(rosidl_runtime_cpp REQUIRED)
 find_package(industrial_route_core REQUIRED)
 find_package(industrial_route_interfaces REQUIRED)
 
+# Nav2 dependencies for planner plugin
+find_package(nav2_core REQUIRED)
+find_package(nav2_costmap_2d REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(pluginlib REQUIRED)
+
+# Industrial Route Server executable
 add_executable(industrial_route_server
   src/industrial_route_server_node.cpp
   src/occupancy_grid_collision_checker.cpp
@@ -48,8 +55,37 @@ ament_target_dependencies(industrial_route_server
   industrial_route_core
 )
 
+# Industrial Route Planner plugin (Nav2 GlobalPlanner)
+add_library(industrial_route_planner SHARED
+  src/industrial_route_planner.cpp
+)
+target_compile_features(industrial_route_planner PUBLIC cxx_std_17)
+target_include_directories(industrial_route_planner PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(industrial_route_planner
+  rclcpp
+  rclcpp_lifecycle
+  nav2_core
+  nav2_costmap_2d
+  nav2_util
+  nav_msgs
+  geometry_msgs
+  tf2_ros
+  pluginlib
+  industrial_route_interfaces
+)
+pluginlib_export_plugin_description_file(nav2_core plugins.xml)
+
 install(TARGETS industrial_route_server
   DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS industrial_route_planner
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY launch config rviz
@@ -63,6 +99,14 @@ install(PROGRAMS
 
 install(DIRECTORY include/
   DESTINATION include
+)
+
+ament_export_include_directories(include)
+ament_export_libraries(industrial_route_planner)
+ament_export_dependencies(
+  nav2_core
+  nav2_costmap_2d
+  pluginlib
 )
 
 ament_package()

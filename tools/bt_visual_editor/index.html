@@ -37,6 +37,16 @@
         <button id="btn-import-palette" class="toolbar-btn" title="导入节点描述（TreeNodesModel XML）">
           <span class="icon">🧩</span> 导入节点库
         </button>
+        <button id="btn-manage-palettes" class="toolbar-btn" title="管理已保存的节点库（本地浏览器存储）">
+          <span class="icon">🗂️</span> 节点库管理
+        </button>
+        <div class="separator"></div>
+        <button id="btn-templates" class="toolbar-btn" title="加载内置行为树模板">
+          <span class="icon">🧱</span> 模板
+        </button>
+        <button id="btn-ai-mission" class="toolbar-btn" title="用自然语言生成任务/巡检（需本地生成服务）">
+          <span class="icon">🤖</span> AI任务
+        </button>
       </div>
       <div class="toolbar-right">
         <button id="btn-validate" class="toolbar-btn" title="验证行为树结构">
@@ -57,6 +67,8 @@
         <div id="blockly-container"></div>
       </section>
 
+      <div class="panel-resizer" data-left="#blockly-panel" data-right="#xml-panel" title="拖动调整宽度"></div>
+
       <!-- 中间：XML代码面板 -->
       <section id="xml-panel" class="panel">
         <div class="panel-header">
@@ -67,6 +79,8 @@
           <pre id="xml-output"><code></code></pre>
         </div>
       </section>
+
+      <div class="panel-resizer" data-left="#xml-panel" data-right="#graph-panel" title="拖动调整宽度"></div>
 
       <!-- 右侧：行为树图形可视化 -->
       <section id="graph-panel" class="panel">

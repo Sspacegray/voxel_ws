@@ -12,11 +12,11 @@ import * as Blockly from 'blockly';
 Blockly.Blocks['bt_sequence'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('Sequence')
+            .appendField('Sequence 顺序')
             .appendField(new Blockly.FieldTextInput(''), 'NAME');
         this.appendStatementInput('CHILDREN')
             .setCheck(null)
-            .appendField('children');
+            .appendField('children 子节点');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(210);
@@ -34,11 +34,11 @@ Blockly.Blocks['bt_sequence'] = {
 Blockly.Blocks['bt_pipeline_sequence'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('PipelineSequence')
+            .appendField('PipelineSequence 管道顺序')
             .appendField(new Blockly.FieldTextInput(''), 'NAME');
         this.appendStatementInput('CHILDREN')
             .setCheck(null)
-            .appendField('children');
+            .appendField('children 子节点');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(210);
@@ -56,11 +56,11 @@ Blockly.Blocks['bt_pipeline_sequence'] = {
 Blockly.Blocks['bt_fallback'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('Fallback')
+            .appendField('Fallback 选择')
             .appendField(new Blockly.FieldTextInput(''), 'NAME');
         this.appendStatementInput('CHILDREN')
             .setCheck(null)
-            .appendField('children');
+            .appendField('children 子节点');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(120);
@@ -78,11 +78,11 @@ Blockly.Blocks['bt_fallback'] = {
 Blockly.Blocks['bt_reactive_fallback'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('ReactiveFallback')
+            .appendField('ReactiveFallback 响应选择')
             .appendField(new Blockly.FieldTextInput(''), 'NAME');
         this.appendStatementInput('CHILDREN')
             .setCheck(null)
-            .appendField('children');
+            .appendField('children 子节点');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(120);
@@ -100,11 +100,11 @@ Blockly.Blocks['bt_reactive_fallback'] = {
 Blockly.Blocks['bt_reactive_sequence'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('ReactiveSequence')
+            .appendField('ReactiveSequence 响应顺序')
             .appendField(new Blockly.FieldTextInput(''), 'NAME');
         this.appendStatementInput('CHILDREN')
             .setCheck(null)
-            .appendField('children');
+            .appendField('children 子节点');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(210);
@@ -122,14 +122,14 @@ Blockly.Blocks['bt_reactive_sequence'] = {
 Blockly.Blocks['bt_recovery'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('RecoveryNode')
+            .appendField('RecoveryNode 恢复')
             .appendField(new Blockly.FieldTextInput(''), 'NAME');
         this.appendDummyInput()
             .appendField('retries 重试次数')
             .appendField(new Blockly.FieldNumber(3, 0, 20, 1), 'RETRIES');
         this.appendStatementInput('CHILDREN')
             .setCheck(null)
-            .appendField('children');
+            .appendField('children 子节点');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(210);
@@ -147,11 +147,11 @@ Blockly.Blocks['bt_recovery'] = {
 Blockly.Blocks['bt_round_robin'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('RoundRobin')
+            .appendField('RoundRobin 轮询')
             .appendField(new Blockly.FieldTextInput(''), 'NAME');
         this.appendStatementInput('CHILDREN')
             .setCheck(null)
-            .appendField('children');
+            .appendField('children 子节点');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(210);
@@ -169,7 +169,7 @@ Blockly.Blocks['bt_round_robin'] = {
 Blockly.Blocks['bt_parallel'] = {
     init: function () {
         this.appendDummyInput()
-            .appendField('Parallel')
+            .appendField('Parallel 并行')
             .appendField(new Blockly.FieldTextInput(''), 'NAME');
         this.appendDummyInput()
             .appendField('success 成功阈值')
@@ -178,7 +178,7 @@ Blockly.Blocks['bt_parallel'] = {
             .appendField(new Blockly.FieldNumber(1, 1, 10, 1), 'FAILURE_THRESHOLD');
         this.appendStatementInput('CHILDREN')
             .setCheck(null)
-            .appendField('children');
+            .appendField('children 子节点');
         this.setPreviousStatement(true, null);
         this.setNextStatement(true, null);
         this.setColour(210);

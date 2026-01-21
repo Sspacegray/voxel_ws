@@ -4,12 +4,10 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Map1/Status1
         - /Map1/Topic1
         - /Odometry1/Topic1
       Splitter Ratio: 0.5
-    Tree Height: 737
+    Tree Height: 702
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -134,14 +132,14 @@ Visualization Manager:
       Enabled: true
       Name: Route Network
       Namespaces:
-        {}
+        industrial_route_edges: true
+        industrial_route_nodes: true
       Topic:
         Depth: 5
         Durability Policy: Transient Local
-        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /route_graph
+        Value: /industrial_route/graph_markers
       Value: true
     - Alpha: 1
       Class: rviz_default_plugins/RobotModel
@@ -474,7 +472,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /received_global_plan
+        Value: /industrial_route/path
       Value: true
     - Alpha: 1
       Buffer Length: 1
@@ -588,7 +586,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 68.24852752685547
+      Scale: 109.95401000976562
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
       X: 0.20158174633979797
@@ -597,12 +595,12 @@ Visualization Manager:
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1347
+  Height: 2074
   Hide Left Dock: false
   Hide Right Dock: false
   Navigation 2:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd000000030000000000000156000004aefc0200000003fb000000100044006900730070006c006100790073010000003b00000385000000c700fffffffb0000001200530065006c0065006300740069006f006e00000002b10000011d0000005c00fffffffb00000018004e0061007600690067006100740069006f006e0020003201000003c6000001230000012300ffffff00000001000001e1000004aefc0200000003fb0000000a00560069006500770073010000003b00000123000000a000fffffffb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000164000000d80000005c00fffffffb000000260057006100790070006f0069006e00740045006400690074006f007200500061006e0065006c0100000242000002a70000020600ffffff00000003000009f400000039fc0100000001fb0000000800540069006d00650100000000000009f40000025300ffffff000006b1000004ae00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000300000000000003e70000071ffc0200000003fb000000100044006900730070006c00610079007301000000660000038d000000fc00fffffffb0000001200530065006c0065006300740069006f006e00000002b10000011d0000006f00fffffffb00000018004e0061007600690067006100740069006f006e0020003201000003ff00000386000001fa00ffffff00000001000002c20000071ffc0200000003fb0000000a00560069006500770073010000006600000187000000e900fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007301000001f90000011f0000006f00fffffffb000000260057006100790070006f0069006e00740045006400690074006f007200500061006e0065006c0100000324000004610000029c00ffffff0000000300000d500000005afc0100000001fb0000000800540069006d0065010000000000000d500000054c00ffffff0000068f0000071f00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -613,6 +611,6 @@ Window Geometry:
     collapsed: false
   WaypointEditorPanel:
     collapsed: false
-  Width: 2548
-  X: 1888
-  Y: -32
+  Width: 3408
+  X: 0
+  Y: 0

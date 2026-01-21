@@ -2,7 +2,7 @@
 <package format="3">
   <name>industrial_route_ros2</name>
   <version>0.1.0</version>
-  <description>ROS 2 nodes for industrial half-structured route navigation (Nav2-independent).</description>
+  <description>ROS 2 nodes for industrial half-structured route navigation with Nav2 integration.</description>
   <maintainer email="you@example.com">voxel_ws</maintainer>
   <license>Apache-2.0</license>
 
@@ -10,6 +10,7 @@
 
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
+  <depend>rclcpp_lifecycle</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
   <depend>tf2_geometry_msgs</depend>
@@ -22,4 +23,11 @@
   <depend>industrial_route_interfaces</depend>
   <depend>industrial_route_core</depend>
 
+  <!-- Nav2 dependencies for planner plugin -->
+  <depend>nav2_core</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>nav2_util</depend>
+  <depend>pluginlib</depend>
+
 </package>
+

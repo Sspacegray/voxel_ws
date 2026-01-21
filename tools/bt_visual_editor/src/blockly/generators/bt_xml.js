@@ -76,10 +76,26 @@ function generateChildren(block, inputName, generator) {
     return code;
 }
 
+// Decorator 节点只允许一个 child：仅序列化第一个子块，避免生成非法 BT（多个 child）
+function generateSingleChild(block, inputName, generator) {
+    const childBlock = block.getInputTargetBlock(inputName);
+    if (!childBlock) return '';
+    return generator.blockToCode(childBlock);
+}
+
 function formatNameAttr(name) {
     const trimmed = String(name ?? '').trim();
     if (!trimmed) return '';
-    return ` name="${trimmed}"`;
+    return ` name="${escapeXmlAttr(trimmed)}"`;
+}
+
+function escapeXmlAttr(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&apos;');
 }
 
 // ========================================
@@ -183,7 +199,7 @@ btXmlGenerator.forBlock['bt_parallel'] = function (block, generator) {
 
 btXmlGenerator.forBlock['bt_rate_controller'] = function (block, generator) {
     const hz = block.getFieldValue('HZ');
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
         return addIndent(`<RateController hz="${hz}"/>\n`);
     }
@@ -196,11 +212,11 @@ btXmlGenerator.forBlock['bt_distance_controller'] = function (block, generator) 
     const distance = block.getFieldValue('DISTANCE');
     const globalFrame = block.getFieldValue('GLOBAL_FRAME');
     const robotFrame = block.getFieldValue('ROBOT_FRAME');
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
-        return addIndent(`<DistanceController distance="${distance}" global_frame="${globalFrame}" robot_base_frame="${robotFrame}"/>\n`);
+        return addIndent(`<DistanceController distance="${distance}" global_frame="${escapeXmlAttr(globalFrame)}" robot_base_frame="${escapeXmlAttr(robotFrame)}"/>\n`);
     }
-    return addIndent(`<DistanceController distance="${distance}" global_frame="${globalFrame}" robot_base_frame="${robotFrame}">\n`) +
+    return addIndent(`<DistanceController distance="${distance}" global_frame="${escapeXmlAttr(globalFrame)}" robot_base_frame="${escapeXmlAttr(robotFrame)}">\n`) +
         child +
         addIndent(`</DistanceController>\n`);
 };
@@ -210,7 +226,7 @@ btXmlGenerator.forBlock['bt_speed_controller'] = function (block, generator) {
     const maxRate = block.getFieldValue('MAX_RATE');
     const minSpeed = block.getFieldValue('MIN_SPEED');
     const maxSpeed = block.getFieldValue('MAX_SPEED');
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
         return addIndent(`<SpeedController min_rate="${minRate}" max_rate="${maxRate}" min_speed="${minSpeed}" max_speed="${maxSpeed}"/>\n`);
     }
@@ -222,17 +238,17 @@ btXmlGenerator.forBlock['bt_speed_controller'] = function (block, generator) {
 btXmlGenerator.forBlock['bt_goal_updater'] = function (block, generator) {
     const inputGoal = block.getFieldValue('INPUT_GOAL');
     const outputGoal = block.getFieldValue('OUTPUT_GOAL');
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
-        return addIndent(`<GoalUpdater input_goal="${inputGoal}" output_goal="${outputGoal}"/>\n`);
+        return addIndent(`<GoalUpdater input_goal="${escapeXmlAttr(inputGoal)}" output_goal="${escapeXmlAttr(outputGoal)}"/>\n`);
     }
-    return addIndent(`<GoalUpdater input_goal="${inputGoal}" output_goal="${outputGoal}">\n`) +
+    return addIndent(`<GoalUpdater input_goal="${escapeXmlAttr(inputGoal)}" output_goal="${escapeXmlAttr(outputGoal)}">\n`) +
         child +
         addIndent(`</GoalUpdater>\n`);
 };
 
 btXmlGenerator.forBlock['bt_single_trigger'] = function (block, generator) {
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
         return addIndent(`<SingleTrigger/>\n`);
     }
@@ -242,7 +258,7 @@ btXmlGenerator.forBlock['bt_single_trigger'] = function (block, generator) {
 };
 
 btXmlGenerator.forBlock['bt_inverter'] = function (block, generator) {
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
         return addIndent(`<Inverter/>\n`);
     }
@@ -252,7 +268,7 @@ btXmlGenerator.forBlock['bt_inverter'] = function (block, generator) {
 };
 
 btXmlGenerator.forBlock['bt_force_success'] = function (block, generator) {
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
         return addIndent(`<ForceSuccess/>\n`);
     }
@@ -262,7 +278,7 @@ btXmlGenerator.forBlock['bt_force_success'] = function (block, generator) {
 };
 
 btXmlGenerator.forBlock['bt_force_failure'] = function (block, generator) {
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
         return addIndent(`<ForceFailure/>\n`);
     }
@@ -273,7 +289,7 @@ btXmlGenerator.forBlock['bt_force_failure'] = function (block, generator) {
 
 btXmlGenerator.forBlock['bt_repeat'] = function (block, generator) {
     const numCycles = block.getFieldValue('NUM_CYCLES');
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
         return addIndent(`<Repeat num_cycles="${numCycles}"/>\n`);
     }
@@ -284,7 +300,7 @@ btXmlGenerator.forBlock['bt_repeat'] = function (block, generator) {
 
 btXmlGenerator.forBlock['bt_timeout'] = function (block, generator) {
     const timeout = block.getFieldValue('TIMEOUT_SEC');
-    const child = generateChildren(block, 'CHILD', generator);
+    const child = generateSingleChild(block, 'CHILD', generator);
     if (!child.trim()) {
         return addIndent(`<Timeout msec="${timeout * 1000}"/>\n`);
     }
@@ -301,9 +317,9 @@ btXmlGenerator.forBlock['bt_navigate_to_pose'] = function (block, generator) {
     const goal = block.getFieldValue('GOAL');
     const behaviorTree = block.getFieldValue('BEHAVIOR_TREE');
     const serverName = block.getFieldValue('SERVER_NAME');
-    let attrs = `goal="${goal}" server_name="${serverName}"`;
+    let attrs = `goal="${escapeXmlAttr(goal)}" server_name="${escapeXmlAttr(serverName)}"`;
     if (behaviorTree) {
-        attrs += ` behavior_tree="${behaviorTree}"`;
+        attrs += ` behavior_tree="${escapeXmlAttr(behaviorTree)}"`;
     }
     return addIndent(`<NavigateToPose ${attrs}/>\n`);
 };
@@ -311,14 +327,14 @@ btXmlGenerator.forBlock['bt_navigate_to_pose'] = function (block, generator) {
 btXmlGenerator.forBlock['bt_navigate_through_poses'] = function (block, generator) {
     const goals = block.getFieldValue('GOALS');
     const serverName = block.getFieldValue('SERVER_NAME');
-    return addIndent(`<NavigateThroughPoses goals="${goals}" server_name="${serverName}"/>\n`);
+    return addIndent(`<NavigateThroughPoses goals="${escapeXmlAttr(goals)}" server_name="${escapeXmlAttr(serverName)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_compute_path_to_pose'] = function (block, generator) {
     const goal = block.getFieldValue('GOAL');
     const path = block.getFieldValue('PATH');
     const plannerId = block.getFieldValue('PLANNER_ID');
-    return addIndent(`<ComputePathToPose goal="${goal}" path="${path}" planner_id="${plannerId}"/>\n`);
+    return addIndent(`<ComputePathToPose goal="${escapeXmlAttr(goal)}" path="${escapeXmlAttr(path)}" planner_id="${escapeXmlAttr(plannerId)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_follow_path'] = function (block, generator) {
@@ -326,11 +342,11 @@ btXmlGenerator.forBlock['bt_follow_path'] = function (block, generator) {
     const controllerId = block.getFieldValue('CONTROLLER_ID');
     const errorCodeId = block.getFieldValue('ERROR_CODE_ID');
     const attrs = [
-        `path="${path}"`,
-        `controller_id="${controllerId}"`
+        `path="${escapeXmlAttr(path)}"`,
+        `controller_id="${escapeXmlAttr(controllerId)}"`
     ];
     if (errorCodeId) {
-        attrs.push(`error_code_id="${errorCodeId}"`);
+        attrs.push(`error_code_id="${escapeXmlAttr(errorCodeId)}"`);
     }
     return addIndent(`<FollowPath ${attrs.join(' ')}/>\n`);
 };
@@ -340,7 +356,7 @@ btXmlGenerator.forBlock['bt_compute_route'] = function (block, generator) {
     const goalId = block.getFieldValue('GOAL_ID');
     const route = block.getFieldValue('ROUTE');
     const path = block.getFieldValue('PATH');
-    return addIndent(`<ComputeRoute start_id="${startId}" goal_id="${goalId}" route="${route}" path="${path}"/>\n`);
+    return addIndent(`<ComputeRoute start_id="${escapeXmlAttr(startId)}" goal_id="${escapeXmlAttr(goalId)}" route="${escapeXmlAttr(route)}" path="${escapeXmlAttr(path)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_compute_and_track_route'] = function (block, generator) {
@@ -351,13 +367,13 @@ btXmlGenerator.forBlock['bt_compute_and_track_route'] = function (block, generat
     const errorCodeId = block.getFieldValue('ERROR_CODE_ID');
 
     const attrs = [
-        `goal="${goal}"`,
-        `path="${path}"`,
-        `route="${route}"`,
+        `goal="${escapeXmlAttr(goal)}"`,
+        `path="${escapeXmlAttr(path)}"`,
+        `route="${escapeXmlAttr(route)}"`,
         `use_poses="${usePoses}"`
     ];
     if (errorCodeId) {
-        attrs.push(`error_code_id="${errorCodeId}"`);
+        attrs.push(`error_code_id="${escapeXmlAttr(errorCodeId)}"`);
     }
     return addIndent(`<ComputeAndTrackRoute ${attrs.join(' ')}/>\n`);
 };
@@ -380,20 +396,20 @@ btXmlGenerator.forBlock['bt_wait'] = function (block, generator) {
 
 btXmlGenerator.forBlock['bt_clear_costmap'] = function (block, generator) {
     const serviceName = block.getFieldValue('SERVICE_NAME');
-    return addIndent(`<ClearEntireCostmap service_name="${serviceName}"/>\n`);
+    return addIndent(`<ClearEntireCostmap service_name="${escapeXmlAttr(serviceName)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_dock_robot'] = function (block, generator) {
     const dockId = block.getFieldValue('DOCK_ID');
     const navigateToStaging = block.getFieldValue('NAVIGATE_TO_STAGING') === 'TRUE';
-    return addIndent(`<DockRobot dock_id="${dockId}" navigate_to_staging_pose="${navigateToStaging}"/>\n`);
+    return addIndent(`<DockRobot dock_id="${escapeXmlAttr(dockId)}" navigate_to_staging_pose="${navigateToStaging}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_undock_robot'] = function (block, generator) {
     const dockType = block.getFieldValue('DOCK_TYPE');
     let attrs = '';
     if (dockType) {
-        attrs = ` dock_type="${dockType}"`;
+        attrs = ` dock_type="${escapeXmlAttr(dockType)}"`;
     }
     return addIndent(`<UndockRobot${attrs}/>\n`);
 };
@@ -402,33 +418,33 @@ btXmlGenerator.forBlock['bt_smooth_path'] = function (block, generator) {
     const unsmoothedPath = block.getFieldValue('UNSMOOTHED_PATH');
     const smoothedPath = block.getFieldValue('SMOOTHED_PATH');
     const smootherId = block.getFieldValue('SMOOTHER_ID');
-    return addIndent(`<SmoothPath unsmoothed_path="${unsmoothedPath}" smoothed_path="${smoothedPath}" smoother_id="${smootherId}"/>\n`);
+    return addIndent(`<SmoothPath unsmoothed_path="${escapeXmlAttr(unsmoothedPath)}" smoothed_path="${escapeXmlAttr(smoothedPath)}" smoother_id="${escapeXmlAttr(smootherId)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_truncate_path'] = function (block, generator) {
     const inputPath = block.getFieldValue('INPUT_PATH');
     const outputPath = block.getFieldValue('OUTPUT_PATH');
     const distance = block.getFieldValue('DISTANCE');
-    return addIndent(`<TruncatePath input_path="${inputPath}" output_path="${outputPath}" distance="${distance}"/>\n`);
+    return addIndent(`<TruncatePath input_path="${escapeXmlAttr(inputPath)}" output_path="${escapeXmlAttr(outputPath)}" distance="${distance}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_reinitialize_localization'] = function (block, generator) {
     const serviceName = block.getFieldValue('SERVICE_NAME');
-    return addIndent(`<ReinitializeGlobalLocalization service_name="${serviceName}"/>\n`);
+    return addIndent(`<ReinitializeGlobalLocalization service_name="${escapeXmlAttr(serviceName)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_controller_selector'] = function (block, generator) {
     const defaultController = block.getFieldValue('DEFAULT_CONTROLLER');
     const selectedController = block.getFieldValue('SELECTED_CONTROLLER');
     const topicName = block.getFieldValue('TOPIC_NAME') || 'controller_selector';
-    return addIndent(`<ControllerSelector default_controller="${defaultController}" selected_controller="${selectedController}" topic_name="${topicName}"/>\n`);
+    return addIndent(`<ControllerSelector default_controller="${escapeXmlAttr(defaultController)}" selected_controller="${escapeXmlAttr(selectedController)}" topic_name="${escapeXmlAttr(topicName)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_planner_selector'] = function (block, generator) {
     const defaultPlanner = block.getFieldValue('DEFAULT_PLANNER');
     const selectedPlanner = block.getFieldValue('SELECTED_PLANNER');
     const topicName = block.getFieldValue('TOPIC_NAME') || 'planner_selector';
-    return addIndent(`<PlannerSelector default_planner="${defaultPlanner}" selected_planner="${selectedPlanner}" topic_name="${topicName}"/>\n`);
+    return addIndent(`<PlannerSelector default_planner="${escapeXmlAttr(defaultPlanner)}" selected_planner="${escapeXmlAttr(selectedPlanner)}" topic_name="${escapeXmlAttr(topicName)}"/>\n`);
 };
 
 // ========================================
@@ -438,7 +454,7 @@ btXmlGenerator.forBlock['bt_planner_selector'] = function (block, generator) {
 btXmlGenerator.forBlock['bt_goal_reached'] = function (block, generator) {
     const goal = block.getFieldValue('GOAL');
     const robotBaseFrame = block.getFieldValue('ROBOT_BASE_FRAME');
-    return addIndent(`<GoalReached goal="${goal}" robot_base_frame="${robotBaseFrame}"/>\n`);
+    return addIndent(`<GoalReached goal="${escapeXmlAttr(goal)}" robot_base_frame="${escapeXmlAttr(robotBaseFrame)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_goal_updated'] = function (block, generator) {
@@ -449,17 +465,17 @@ btXmlGenerator.forBlock['bt_is_battery_low'] = function (block, generator) {
     const minBattery = block.getFieldValue('MIN_BATTERY');
     const batteryTopic = block.getFieldValue('BATTERY_TOPIC');
     const isVoltage = block.getFieldValue('IS_VOLTAGE') === 'TRUE';
-    return addIndent(`<IsBatteryLow min_battery="${minBattery}" battery_topic="${batteryTopic}" is_voltage="${isVoltage}"/>\n`);
+    return addIndent(`<IsBatteryLow min_battery="${minBattery}" battery_topic="${escapeXmlAttr(batteryTopic)}" is_voltage="${isVoltage}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_is_battery_charging'] = function (block, generator) {
     const batteryTopic = block.getFieldValue('BATTERY_TOPIC');
-    return addIndent(`<IsBatteryCharging battery_topic="${batteryTopic}"/>\n`);
+    return addIndent(`<IsBatteryCharging battery_topic="${escapeXmlAttr(batteryTopic)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_is_path_valid'] = function (block, generator) {
     const path = block.getFieldValue('PATH');
-    return addIndent(`<IsPathValid path="${path}"/>\n`);
+    return addIndent(`<IsPathValid path="${escapeXmlAttr(path)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_is_stuck'] = function (block, generator) {
@@ -485,23 +501,23 @@ btXmlGenerator.forBlock['bt_distance_traveled'] = function (block, generator) {
     const distance = block.getFieldValue('DISTANCE');
     const globalFrame = block.getFieldValue('GLOBAL_FRAME');
     const robotBaseFrame = block.getFieldValue('ROBOT_BASE_FRAME');
-    return addIndent(`<DistanceTraveled distance="${distance}" global_frame="${globalFrame}" robot_base_frame="${robotBaseFrame}"/>\n`);
+    return addIndent(`<DistanceTraveled distance="${distance}" global_frame="${escapeXmlAttr(globalFrame)}" robot_base_frame="${escapeXmlAttr(robotBaseFrame)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_transform_available'] = function (block, generator) {
     const parent = block.getFieldValue('PARENT');
     const child = block.getFieldValue('CHILD');
-    return addIndent(`<TransformAvailable parent="${parent}" child="${child}"/>\n`);
+    return addIndent(`<TransformAvailable parent="${escapeXmlAttr(parent)}" child="${escapeXmlAttr(child)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_would_controller_recovery_help'] = function (block, generator) {
     const errorCode = block.getFieldValue('ERROR_CODE');
-    return addIndent(`<WouldAControllerRecoveryHelp error_code="${errorCode}"/>\n`);
+    return addIndent(`<WouldAControllerRecoveryHelp error_code="${escapeXmlAttr(errorCode)}"/>\n`);
 };
 
 btXmlGenerator.forBlock['bt_would_planner_recovery_help'] = function (block, generator) {
     const errorCode = block.getFieldValue('ERROR_CODE');
-    return addIndent(`<WouldAPlannerRecoveryHelp error_code="${errorCode}"/>\n`);
+    return addIndent(`<WouldAPlannerRecoveryHelp error_code="${escapeXmlAttr(errorCode)}"/>\n`);
 };
 
 // ========================================
@@ -520,6 +536,10 @@ btXmlGenerator.forBlock['bt_unknown_node'] = function (block, generator) {
     return addIndent(`<${tag}${attrStr}>\n`) +
         children +
         addIndent(`</${tag}>\n`);
+};
+
+btXmlGenerator.forBlock['bt_always_success'] = function (block, generator) {
+    return addIndent(`<AlwaysSuccess/>\n`);
 };
 
 export default btXmlGenerator;

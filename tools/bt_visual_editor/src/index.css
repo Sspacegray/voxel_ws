@@ -201,9 +201,37 @@ body {
 #main-content {
   display: flex;
   flex: 1;
-  gap: 1px;
+  gap: 0;
   background: var(--bg-primary);
   overflow: hidden;
+}
+
+.panel-resizer {
+  flex: 0 0 6px;
+  cursor: col-resize;
+  background: var(--bg-primary);
+  position: relative;
+  user-select: none;
+}
+
+.panel-resizer::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border-color);
+  transition: background var(--transition-fast);
+}
+
+.panel-resizer:hover::before,
+.panel-resizer.dragging::before {
+  background: var(--border-color-hover);
+}
+
+.panel-resizer.dragging::before {
+  background: var(--accent-primary);
 }
 
 /* 面板通用样式 */
@@ -353,8 +381,18 @@ body {
   gap: 10px;
 }
 
+#node-count,
+#validation-status {
+  cursor: pointer;
+  user-select: none;
+}
+
 #validation-status.valid {
   color: var(--accent-success);
+}
+
+#validation-status.warning {
+  color: #f59e0b;
 }
 
 #validation-status.invalid {
